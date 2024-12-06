@@ -83,53 +83,55 @@ def load_data(data_dir="../data/letters/thamudic_letters"):
     Returns:
         tuple: (images, labels, label_encoder)
     """
+    # قراءة ملف التعيين
+    with open("../data/letters/letter_mapping.json", "r", encoding="utf-8") as f:
+        letter_mapping = json.load(f)
+    
+    # تهيئة القوائم
     images = []
     labels = []
-    original_labels = []
-    processed_count = 0
-    
-    # Load images from directory
-    for filename in os.listdir(data_dir):
-        if filename.endswith('.png'):
-            image_path = os.path.join(data_dir, filename)
-            original_image = preprocess_image(image_path)
-            
-            if original_image is not None:
-                # Add original image
-                images.append(original_image)
-                original_label = filename.split('_')[1].split('.')[0]
-                labels.append(original_label)
-                original_labels.append(original_label)
-                processed_count += 1
-                
-                # Generate and add augmented images
-                augmented_images = augment_image(original_image)
-                images.extend(augmented_images)
-                labels.extend([original_label] * len(augmented_images))
-                original_labels.extend([original_label] * len(augmented_images))
-    
-    # Convert labels to numpy array and encode
-    labels = np.array(labels, dtype=str)
     label_encoder = LabelEncoder()
+    
+    # التكرار على الحروف الثمودية
+    for letter_data in letter_mapping['thamudic_letters']:
+        letter_symbol = letter_data['symbol']
+        letter_name = letter_data['name']
+        
+        # مسار مجلد الحرف
+        letter_dir = os.path.join(data_dir, letter_name)
+        
+        # التأكد من وجود المجلد
+        if not os.path.exists(letter_dir):
+            print(f"Warning: Directory not found for letter {letter_name}")
+            continue
+        
+        # جمع جميع الصور للحرف
+        letter_images = []
+        for img_file in os.listdir(letter_dir):
+            if img_file.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff')):
+                img_path = os.path.join(letter_dir, img_file)
+                processed_img = preprocess_image(img_path)
+                
+                if processed_img is not None:
+                    # إضافة الصورة الأصلية
+                    letter_images.append(processed_img)
+                    
+                    # توليد صور معززة
+                    augmented_images = augment_image(processed_img)
+                    letter_images.extend(augmented_images)
+        
+        # إضافة الصور إلى القوائم الرئيسية
+        images.extend(letter_images)
+        labels.extend([letter_symbol] * len(letter_images))
+    
+    # تحويل التسميات إلى أرقام
     labels = label_encoder.fit_transform(labels)
     
-    # Save label mapping information
-    mapping_info = {
-        "original_labels": original_labels,
-        "mapped_labels": labels.tolist(),
-        "encoded_labels": labels.tolist(),
-        "label_mapping": {orig: mapped for orig, mapped in zip(original_labels, labels)},
-        "label_encoder_classes": label_encoder.classes_.tolist()
-    }
+    # تحويل القوائم إلى مصفوفات numpy
+    images = np.array(images)
+    labels = np.array(labels)
     
-    # Save label mapping information
-    os.makedirs("../data", exist_ok=True)
-    with open("../data/label_mapping_info.json", "w", encoding="utf-8") as f:
-        json.dump(mapping_info, f, ensure_ascii=False, indent=4)
-    
-    print(f"Processed {processed_count} images.")
-    
-    return np.array(images), labels, label_encoder
+    return images, labels, label_encoder
 
 def split_data(images, labels, test_size=0.2, val_size=0.2):
     # تقسيم البيانات إلى مجموعات التدريب والاختبار والتحقق
