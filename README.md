@@ -1,64 +1,128 @@
-# مشروع التعرف على اللغة الثمودية
+# Thamudic Text Recognition Project
 
-## الوصف
-مشروع لتصنيف وتحليل النصوص الثمودية باستخدام التعلم العميق والشبكات العصبية التلافيفية.
+## Project Overview
+An advanced optical character recognition (OCR) system for ancient Thamudic inscriptions, leveraging state-of-the-art image processing and machine learning techniques.
 
-## المتطلبات
+## Project Objectives
+- Collect and organize Thamudic text images
+- Develop robust image preprocessing pipelines
+- Create a specialized machine learning model for Thamudic character recognition
+- Contribute to archaeological research and linguistic preservation
+
+## Project Structure
+```
+thamudic_env/
+│
+├── data/
+│   └── letters/
+│       ├── thamudic_letters/     # Raw and processed letter images
+│       └── letter_mapping.json   # Mapping of Thamudic letter metadata
+│
+├── Scripts/
+│   ├── manage_thamudicletters_images.py  # Image collection and organization
+│   └── data_preprocessing.py     # Advanced image preprocessing
+│
+└── README.md
+```
+
+## Technical Requirements
+### Software
 - Python 3.8+
-- TensorFlow
-- OpenCV
-- NumPy
-- scikit-learn
-- matplotlib
-- seaborn
+- Operating System: Windows/Linux/macOS
 
-## تثبيت التبعيات
+### Python Dependencies
+- Image Processing
+  * OpenCV (4.5+)
+  * NumPy (1.19+)
+  * Albumentations (1.1+)
+
+- Machine Learning
+  * scikit-learn (0.24+)
+  * TensorFlow (2.6+) or PyTorch (1.10+)
+
+- Additional Tools
+  * json
+  * typing
+
+## Installation
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/[your-username]/thamudic-text-recognition.git
+cd thamudic-text-recognition
+```
+
+### 2. Create Virtual Environment
+```bash
+python -m venv thamudic_env
+source thamudic_env/bin/activate  # On Windows: thamudic_env\Scripts\activate
+```
+
+### 3. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
-## هيكل المشروع
-- `Scripts/data_preprocessing.py`: معالجة وتحضير البيانات
-- `Scripts/train_model.py`: تدريب نموذج التعرف على اللغة
-- `Scripts/evaluate_model.py`: تقييم أداء النموذج
-- `Scripts/dataset_creator.py`: إنشاء مجموعة بيانات الحروف
+## Usage
 
-## إنشاء مجموعة بيانات الحروف
-
-### خطوات إعداد مجموعة البيانات
-1. وضع صورة الحروف في مجلد `data/raw`
-2. تشغيل `Scripts/dataset_creator.py`
-3. ستتم معالجة الصورة وتقسيمها تلقائيًا
-
-### هيكل مجلد البيانات
+### Image Collection and Organization
+```bash
+python Scripts/manage_thamudicletters_images.py
 ```
-data/
-├── raw/
-│   └── letters_image.png
-└── letters/
-    ├── thamudic/
-    │   ├── letter_0.png
-    │   ├── letter_1.png
-    │   └── ...
-    └── arabic/
-        ├── letter_0.png
-        ├── letter_1.png
-        └── ...
+This script validates, cleans, and organizes Thamudic letter images.
+
+### Data Preprocessing
+```bash
+python Scripts/data_preprocessing.py
 ```
+Preprocesses images, applies augmentation, and prepares data for model training.
 
-### ملاحظات مهمة
-- تأكد من جودة الصورة ووضوح الحروف
-- قد تحتاج لتعديل كود `dataset_creator.py` حسب شكل صورتك
+## Project Challenges
+- Limited Thamudic language datasets
+- Complex image preprocessing requirements
+- Variations in ancient inscription styles
+- Need for specialized OCR training
 
-## خطوات التشغيل
-1. وضع الصور الخام في مجلد `data/raw`
-2. تشغيل `data_preprocessing.py` لمعالجة الصور
-3. تشغيل `train_model.py` لتدريب النموذج
-4. تشغيل `evaluate_model.py` لتقييم النموذج
+## Contribution Guidelines
+We welcome contributions in the following areas:
+1. Image Dataset Expansion
+   - Add high-quality Thamudic inscription images
+   - Improve image annotation
+   - Validate and verify image metadata
 
-## ملاحظات
-- تأكد من تنظيم الصور في مجلدات حسب الفئات
-- يمكن ضبط معلمات النموذج في ملفات التدريب والتقييم
+2. Algorithm Development
+   - Enhance image preprocessing techniques
+   - Develop advanced feature extraction methods
+   - Improve character segmentation algorithms
 
-## المساهمة
-للمساهمة في المشروع، يرجى إنشاء pull request أو فتح issue.
+3. Machine Learning Models
+   - Experiment with different neural network architectures
+   - Implement transfer learning techniques
+   - Optimize model performance and accuracy
+
+4. Documentation
+   - Improve project documentation
+   - Add usage examples
+   - Create tutorial guides
+
+## Research and Collaboration
+This project aims to bridge computational linguistics with archaeological research. We encourage collaboration with:
+- Linguists
+- Archaeologists
+- Machine Learning Researchers
+- Open-source Contributors
+
+## License
+[Specify your license, e.g., MIT, Apache 2.0]
+
+## Acknowledgments
+- [List any funding sources, research institutions, or key contributors]
+
+## Contact
+- Project Lead: [Your Name]
+- Email: [Your Email]
+- Research Institution: [Optional]
+
+## Citations
+If you use this project in your research, please cite:
+[Placeholder for academic citation]
