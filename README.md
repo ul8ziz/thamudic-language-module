@@ -21,6 +21,34 @@ pip install -r requirements.txt
 - `Scripts/data_preprocessing.py`: معالجة وتحضير البيانات
 - `Scripts/train_model.py`: تدريب نموذج التعرف على اللغة
 - `Scripts/evaluate_model.py`: تقييم أداء النموذج
+- `Scripts/dataset_creator.py`: إنشاء مجموعة بيانات الحروف
+
+## إنشاء مجموعة بيانات الحروف
+
+### خطوات إعداد مجموعة البيانات
+1. وضع صورة الحروف في مجلد `data/raw`
+2. تشغيل `Scripts/dataset_creator.py`
+3. ستتم معالجة الصورة وتقسيمها تلقائيًا
+
+### هيكل مجلد البيانات
+```
+data/
+├── raw/
+│   └── letters_image.png
+└── letters/
+    ├── thamudic/
+    │   ├── letter_0.png
+    │   ├── letter_1.png
+    │   └── ...
+    └── arabic/
+        ├── letter_0.png
+        ├── letter_1.png
+        └── ...
+```
+
+### ملاحظات مهمة
+- تأكد من جودة الصورة ووضوح الحروف
+- قد تحتاج لتعديل كود `dataset_creator.py` حسب شكل صورتك
 
 ## خطوات التشغيل
 1. وضع الصور الخام في مجلد `data/raw`
