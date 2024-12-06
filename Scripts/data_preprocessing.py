@@ -1,38 +1,135 @@
-import cv2
 import os
+import json
+import cv2
 import numpy as np
+from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
+import albumentations as A
 
-def preprocess_images(input_dir, output_dir):
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
-    for filename in os.listdir(input_dir):
-        image_path = os.path.join(input_dir, filename)
+def preprocess_image(image_path):
+    """
+    معالجة الصورة للتدريب
+    - تحويل إلى تدرجات الرمادي
+    - تغيير الحجم
+    - تحسين التباين
+    - تنعيم الصورة
+    - استخراج الحواف
+    """
+    try:
+        # قراءة الصورة
         image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-        if image is not None:
-            # تحسين الصورة
-            image = cv2.resize(image, (128, 128))  # تغيير الحجم
-            image = cv2.GaussianBlur(image, (5, 5), 0)
-            image = cv2.equalizeHist(image)
-            # حفظ الصورة
-            cv2.imwrite(os.path.join(output_dir, filename), image)
+        
+        if image is None:
+            print(f"Error reading image: {image_path}")
+            return None
+        
+        # تغيير الحجم
+        resized_image = cv2.resize(image, (128, 128), interpolation=cv2.INTER_AREA)
+        
+        # تحسين التباين باستخدام CLAHE
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        enhanced_image = clahe.apply(resized_image)
+        
+        # تنعيم الصورة
+        blurred = cv2.GaussianBlur(enhanced_image, (3, 3), 0)
+        
+        # استخراج الحواف باستخدام Laplacian
+        laplacian = cv2.Laplacian(blurred, cv2.CV_64F)
+        edge_enhanced = cv2.convertScaleAbs(laplacian)
+        
+        # نرمجة القيم
+        normalized_image = edge_enhanced / 255.0
+        
+        return normalized_image
+    except Exception as e:
+        print(f"Error processing image {image_path}: {e}")
+        return None
 
-def load_data(data_dir):
+def augment_image(image):
+    """
+    Generate augmented versions of an input image
+    
+    Args:
+        image (numpy.ndarray): Input image to augment
+    
+    Returns:
+        list: List of augmented images
+    """
+    augmentations = [
+        A.Compose([
+            A.RandomRotate90(p=0.5),
+            A.Flip(p=0.5),
+            A.RandomBrightnessContrast(p=0.3),
+            A.GaussNoise(p=0.2),
+            A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=15, p=0.5),
+        ])
+        for _ in range(3)  # Generate 3 augmented versions of each image
+    ]
+    
+    augmented_images = []
+    for aug in augmentations:
+        augmented = aug(image=image)['image']
+        augmented_images.append(augmented)
+    
+    return augmented_images
+
+def load_data(data_dir="../data/letters/thamudic_letters"):
+    """
+    Load images and labels from the specified directory with data augmentation
+    
+    Args:
+        data_dir (str): Path to directory containing letter images
+    
+    Returns:
+        tuple: (images, labels, label_encoder)
+    """
     images = []
     labels = []
+    original_labels = []
+    processed_count = 0
     
-    for label, category in enumerate(os.listdir(data_dir)):
-        category_path = os.path.join(data_dir, category)
-        if os.path.isdir(category_path):
-            for filename in os.listdir(category_path):
-                image_path = os.path.join(category_path, filename)
-                image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
-                if image is not None:
-                    image = cv2.resize(image, (128, 128))
-                    images.append(image / 255.0)  # تطبيع البيانات
-                    labels.append(label)
+    # Load images from directory
+    for filename in os.listdir(data_dir):
+        if filename.endswith('.png'):
+            image_path = os.path.join(data_dir, filename)
+            original_image = preprocess_image(image_path)
+            
+            if original_image is not None:
+                # Add original image
+                images.append(original_image)
+                original_label = filename.split('_')[1].split('.')[0]
+                labels.append(original_label)
+                original_labels.append(original_label)
+                processed_count += 1
+                
+                # Generate and add augmented images
+                augmented_images = augment_image(original_image)
+                images.extend(augmented_images)
+                labels.extend([original_label] * len(augmented_images))
+                original_labels.extend([original_label] * len(augmented_images))
     
-    return np.array(images).reshape(-1, 128, 128, 1), np.array(labels)
+    # Convert labels to numpy array and encode
+    labels = np.array(labels, dtype=str)
+    label_encoder = LabelEncoder()
+    labels = label_encoder.fit_transform(labels)
+    
+    # Save label mapping information
+    mapping_info = {
+        "original_labels": original_labels,
+        "mapped_labels": labels.tolist(),
+        "encoded_labels": labels.tolist(),
+        "label_mapping": {orig: mapped for orig, mapped in zip(original_labels, labels)},
+        "label_encoder_classes": label_encoder.classes_.tolist()
+    }
+    
+    # Save label mapping information
+    os.makedirs("../data", exist_ok=True)
+    with open("../data/label_mapping_info.json", "w", encoding="utf-8") as f:
+        json.dump(mapping_info, f, ensure_ascii=False, indent=4)
+    
+    print(f"Processed {processed_count} images.")
+    
+    return np.array(images), labels, label_encoder
 
 def split_data(images, labels, test_size=0.2, val_size=0.2):
     # تقسيم البيانات إلى مجموعات التدريب والاختبار والتحقق
@@ -47,11 +144,8 @@ def split_data(images, labels, test_size=0.2, val_size=0.2):
     return train_images, train_labels, val_images, val_labels, test_images, test_labels
 
 if __name__ == "__main__":
-    # معالجة الصور الخام
-    preprocess_images("data/raw", "data/processed")
-    
     # تحميل البيانات
-    images, labels = load_data("data/processed")
+    images, labels, label_encoder = load_data("../data/letters/thamudic_letters")
     
     # تقسيم البيانات
     train_images, train_labels, val_images, val_labels, test_images, test_labels = split_data(images, labels)

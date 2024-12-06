@@ -70,16 +70,38 @@ def extract_letters_from_directory(
         os.makedirs(output_dir, exist_ok=True)
         
         # قائمة الملفات في المجلد
-        image_files = sorted([
+        image_files = [
             f for f in os.listdir(directory_path) 
             if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff'))
-        ])
+        ]
         
         # تحديد عدد الحروف المطلوبة
-        num_letters = min(len(image_files), len(letters_data))
+        num_letters = len(letters_data)
         
         for i in range(num_letters):
-            image_path = os.path.join(directory_path, image_files[i])
+            letter_info = letters_data[i]
+            letter_name = letter_info['name']
+            
+            # محاولة العثور على الملف باستخدام الأنماط المختلفة للأسماء
+            possible_filenames = [
+                f"{letter_name}.png",  # Arabic name
+                f"letter_{i}.png",     # English with index
+                f"thamudic_{letter_name}.png",  # With thamudic prefix
+                f"thamudic_{letter_name}_{i}.png"  # With thamudic prefix and index
+            ]
+            
+            found_file = None
+            for filename in possible_filenames:
+                if filename in image_files:
+                    found_file = filename
+                    break
+            
+            if found_file is None:
+                logging.warning(f"الصورة غير موجودة: {os.path.join(directory_path, letter_name)}.png")
+                logging.warning(f"تم البحث عن الأسماء التالية: {', '.join(possible_filenames)}")
+                continue
+            
+            image_path = os.path.join(directory_path, found_file)
             
             # قراءة الصورة
             image = cv2.imread(image_path, cv2.IMREAD_GRAYSCALE)
@@ -92,29 +114,25 @@ def extract_letters_from_directory(
             processed_letter = preprocess_image(image)
             
             if processed_letter is not None:
-                # اختيار معلومات الحرف
-                letter_info = letters_data[i]
-                
                 # حفظ الصورة باسم الحرف
-                filename = f"{letter_info['name']}.png"
-                letter_path = os.path.abspath(os.path.join(output_dir, filename))
+                output_filename = f"{letter_name}.png"
+                letter_path = os.path.abspath(os.path.join(output_dir, output_filename))
                 
                 cv2.imwrite(letter_path, processed_letter)
                 
-                # تخزين معلومات الحرف
                 extracted_letters.append({
-                    'path': letter_path,
-                    'name': letter_info['name'],
-                    'type': 'thamudic',
-                    'symbol': letter_info['symbol'],
-                    'original_image': image_files[i]
+                    'original_path': image_path,
+                    'processed_path': letter_path,
+                    'letter_info': letter_info
                 })
-        
-        logging.info(f"تم استخراج {len(extracted_letters)} حرف ثمودي من المجلد: {directory_path}")
+                
+                logging.info(f"تمت معالجة وحفظ الحرف: {letter_name}")
+            
         return extracted_letters
     
     except Exception as e:
         logging.error(f"خطأ في استخراج الحروف: {e}")
+        traceback.print_exc()
         return []
 
 def create_letter_dataset(
@@ -161,7 +179,7 @@ def create_letter_dataset(
         ]:
             for letter in letters:
                 dest_dir = os.path.join(output_base_dir, split, 'thamudic')
-                dest_filename = os.path.basename(letter['path'])
+                dest_filename = os.path.basename(letter['processed_path'])
                 dest_path = os.path.join(dest_dir, dest_filename)
                 
                 # التأكد من وجود المجلد
@@ -170,22 +188,22 @@ def create_letter_dataset(
                 # نسخ الصورة
                 try:
                     # التأكد من أن الصورة المصدر موجودة
-                    if not os.path.exists(letter['path']):
-                        logging.warning(f"الصورة غير موجودة: {letter['path']}")
+                    if not os.path.exists(letter['processed_path']):
+                        logging.warning(f"الصورة غير موجودة: {letter['processed_path']}")
                         continue
                     
                     # نسخ الصورة
-                    shutil.copy2(letter['path'], dest_path)
-                    letter['path'] = dest_path
+                    shutil.copy2(letter['processed_path'], dest_path)
+                    letter['processed_path'] = dest_path
                 except Exception as e:
-                    logging.error(f"خطأ في نسخ الصورة {letter['path']}: {e}")
+                    logging.error(f"خطأ في نسخ الصورة {letter['processed_path']}: {e}")
         
         # إنشاء ملف البيانات الوصفية
         metadata_path = os.path.join(output_base_dir, 'dataset_metadata.csv')
         with open(metadata_path, 'w', newline='', encoding='utf-8') as csvfile:
-            writer = csv.DictWriter(csvfile, fieldnames=['path', 'name', 'type', 'symbol', 'original_image'])
+            writer = csv.DictWriter(csvfile, fieldnames=['original_path', 'processed_path', 'letter_info'])
             writer.writeheader()
-            writer.writerows(thamudic_letters)
+            writer.writerows([{'original_path': letter['original_path'], 'processed_path': letter['processed_path'], 'letter_info': json.dumps(letter['letter_info'])} for letter in thamudic_letters])
         
         logging.info(f"تم إنشاء مجموعة البيانات في {output_base_dir}")
         
