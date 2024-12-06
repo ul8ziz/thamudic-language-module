@@ -7,49 +7,49 @@ from typing import List, Dict
 
 def validate_image(image_path: str) -> bool:
     """
-    Validate image quality and characteristics
+    تحقق من صحة الصورة وجودتها
     
     Args:
-        image_path (str): Path to the image
+        image_path (str): مسار الصورة
     
     Returns:
-        bool: True if image is valid, False otherwise
+        bool: True إذا كانت الصورة صالحة، False خلاف ذلك
     """
     try:
-        # Read the image
+        # قراءة الصورة
         image = cv2.imread(image_path)
         
         if image is None:
-            print(f"Error reading image: {image_path}")
+            print(f"خطأ في قراءة الصورة: {image_path}")
             return False
         
-        # Check image dimensions
+        # التحقق من أبعاد الصورة
         height, width = image.shape[:2]
         if height < 50 or width < 50:
-            print(f"Image too small: {image_path}")
+            print(f"الصورة صغيرة جدًا: {image_path}")
             return False
         
-        # Check image contrast
+        # التحقق من التباين
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         variance = np.var(gray)
         if variance < 10:
-            print(f"Image has low contrast: {image_path}")
+            print(f"الصورة باهتة جدًا: {image_path}")
             return False
         
         return True
     except Exception as e:
-        print(f"Error validating image {image_path}: {e}")
+        print(f"خطأ في التحقق من الصورة {image_path}: {e}")
         return False
 
 def clean_and_organize_images(target_base_dir: str) -> Dict:
     """
-    Clean and organize Thamudic letter images
+    تنظيف وترتيب الصور للحروف الثمودية
     
     Args:
-        target_base_dir (str): Base path for letter folders
+        target_base_dir (str): المسار الأساسي لمجلد الحروف
     
     Returns:
-        dict: Statistics about processed images
+        dict: إحصائيات عن الصور المنظمة
     """
     stats = {
         "total_images": 0,
@@ -57,14 +57,14 @@ def clean_and_organize_images(target_base_dir: str) -> Dict:
         "removed_images": 0
     }
     
-    # Use absolute path for mapping file
+    # استخدام المسار المطلق لملف التعيين
     mapping_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'letters', 'letter_mapping.json')
     
-    # Read mapping file
+    # قراءة ملف التعيين
     with open(mapping_path, "r", encoding="utf-8") as f:
         letter_mapping = json.load(f)
     
-    # Iterate through Thamudic letters
+    # التكرار على الحروف الثمودية
     for letter_data in letter_mapping['thamudic_letters']:
         index = letter_data['index']
         letter_dir = os.path.join(target_base_dir, f"letter_{index+1}")
@@ -72,30 +72,30 @@ def clean_and_organize_images(target_base_dir: str) -> Dict:
         if not os.path.exists(letter_dir):
             os.makedirs(letter_dir)
         
-        # Collect images
+        # جمع الصور
         image_files = [f for f in os.listdir(letter_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp'))]
         stats["total_images"] += len(image_files)
         
-        # Clean and rename images
+        # تنظيف وإعادة تسمية الصور
         for i, img_file in enumerate(image_files):
             img_path = os.path.join(letter_dir, img_file)
             
             if validate_image(img_path):
-                # Rename with consistent format
+                # إعادة التسمية بتنسيق موحد
                 new_name = f"letter_{index}_{i}.png"
                 new_path = os.path.join(letter_dir, new_name)
                 
-                # Convert to grayscale and save
+                # تحويل الصورة إلى تدرجات الرمادي وحفظها
                 image = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
                 cv2.imwrite(new_path, image)
                 
-                # Remove old image
+                # حذف الصورة القديمة
                 if new_path != img_path:
                     os.remove(img_path)
                 
                 stats["valid_images"] += 1
             else:
-                # Remove invalid images
+                # إزالة الصور غير الصالحة
                 os.remove(img_path)
                 stats["removed_images"] += 1
     
@@ -103,52 +103,52 @@ def clean_and_organize_images(target_base_dir: str) -> Dict:
 
 def update_letter_mapping(target_base_dir: str) -> None:
     """
-    Update mapping file with updated image paths
+    تحديث ملف التعيين بمسارات الصور المحدثة
     
     Args:
-        target_base_dir (str): Base path for letter folders
+        target_base_dir (str): المسار الأساسي لمجلد الحروف
     """
-    # Use absolute path for mapping file
+    # استخدام المسار المطلق لملف التعيين
     mapping_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'letters', 'letter_mapping.json')
     
-    # Read mapping file
+    # قراءة ملف التعيين
     with open(mapping_path, "r", encoding="utf-8") as f:
         letter_mapping = json.load(f)
     
-    # Update image paths for Thamudic letters
+    # تحديث مسارات الصور للحروف الثمودية
     for letter_data in letter_mapping['thamudic_letters']:
         index = letter_data['index']
         letter_dir = os.path.join(target_base_dir, f"letter_{index+1}")
         
-        # Collect image paths
+        # جمع مسارات الصور
         image_paths = []
         if os.path.exists(letter_dir):
             for img_file in os.listdir(letter_dir):
                 if img_file.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.tif', '.tiff')):
                     image_paths.append(os.path.join(letter_dir, img_file))
         
-        # Update image paths in mapping
+        # تحديث مسارات الصور في التعيين
         letter_data['images'] = image_paths
     
-    # Save updated mapping
+    # حفظ التعيين المحدث
     with open(mapping_path, "w", encoding="utf-8") as f:
         json.dump(letter_mapping, f, ensure_ascii=False, indent=4)
     
-    print("Updated image paths in mapping file.")
+    print("تم تحديث مسارات الصور في ملف التعيين.")
 
 def main():
-    # Path to Thamudic letters directory
+    # مسار مجلد الحروف الثمودية
     target_base_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', 'letters', 'thamudic_letters')
     
-    # Clean and organize images
+    # تنظيف وترتيب الصور
     stats = clean_and_organize_images(target_base_dir)
     
-    print("Image processing statistics:")
-    print(f"Total images: {stats['total_images']}")
-    print(f"Valid images: {stats['valid_images']}")
-    print(f"Removed images: {stats['removed_images']}")
+    print("إحصائيات معالجة الصور:")
+    print(f"إجمالي الصور: {stats['total_images']}")
+    print(f"الصور الصالحة: {stats['valid_images']}")
+    print(f"الصور المحذوفة: {stats['removed_images']}")
     
-    # Update mapping file
+    # تحديث ملف التعيين
     update_letter_mapping(target_base_dir)
 
 if __name__ == "__main__":

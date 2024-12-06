@@ -6,7 +6,7 @@
             "name": "رمز_اول",
             "description": "الرمز الأول في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_1\\letter_0.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_1\\letter_1_0.png"
             ]
         },
         {
@@ -15,7 +15,7 @@
             "name": "رمز_ثاني",
             "description": "الرمز الثاني في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_2\\letter_1.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_2\\letter_2_0.png"
             ]
         },
         {
@@ -24,7 +24,7 @@
             "name": "رمز_ثالث",
             "description": "الرمز الثالث في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_3\\letter_2.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_3\\letter_3_0.png"
             ]
         },
         {
@@ -33,7 +33,7 @@
             "name": "رمز_رابع",
             "description": "الرمز الرابع في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_4\\letter_3.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_4\\letter_4_0.png"
             ]
         },
         {
@@ -42,7 +42,7 @@
             "name": "رمز_خامس",
             "description": "الرمز الخامس في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_5\\letter_4.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_5\\letter_5_0.png"
             ]
         },
         {
@@ -51,7 +51,7 @@
             "name": "رمز_سادس",
             "description": "الرمز السادس في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_6\\letter_5.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_6\\letter_6_0.png"
             ]
         },
         {
@@ -60,7 +60,7 @@
             "name": "رمز_سابع",
             "description": "الرمز السابع في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_7\\letter_6.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_7\\letter_7_0.png"
             ]
         },
         {
@@ -69,7 +69,7 @@
             "name": "رمز_ثامن",
             "description": "الرمز الثامن في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_8\\letter_7.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_8\\letter_8_0.png"
             ]
         },
         {
@@ -78,7 +78,7 @@
             "name": "رمز_تاسع",
             "description": "الرمز التاسع في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_9\\letter_8.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_9\\letter_9_0.png"
             ]
         },
         {
@@ -87,7 +87,7 @@
             "name": "رمز_عاشر",
             "description": "الرمز العاشر في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_10\\letter_9.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_10\\letter_10_0.png"
             ]
         },
         {
@@ -96,7 +96,7 @@
             "name": "رمز_حادي_عشر",
             "description": "الرمز الحادي عشر في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_11\\letter_10.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_11\\letter_11_0.png"
             ]
         },
         {
@@ -105,7 +105,7 @@
             "name": "رمز_ثاني_عشر",
             "description": "الرمز الثاني عشر في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_12\\letter_11.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_12\\letter_12_0.png"
             ]
         },
         {
@@ -114,7 +114,7 @@
             "name": "رمز_ثالث_عشر",
             "description": "الرمز الثالث عشر في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_13\\letter_12.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_13\\letter_13_0.png"
             ]
         },
         {
@@ -123,7 +123,7 @@
             "name": "رمز_رابع_عشر",
             "description": "الرمز الرابع عشر في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_14\\letter_13.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_14\\letter_14_0.png"
             ]
         },
         {
@@ -132,7 +132,7 @@
             "name": "رمز_خامس_عشر",
             "description": "الرمز الخامس عشر في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_15\\letter_14.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_15\\letter_15_0.png"
             ]
         },
         {
@@ -141,17 +141,13 @@
             "name": "رمز_سادس_عشر",
             "description": "الرمز السادس عشر في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_16\\letter_15.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_16\\letter_16_0.png"
             ]
         },
         {
             "index": 16,
             "symbol": "𐪡",
-            "name": "رمز_سابع_عشر",
-            "description": "الرمز السابع عشر في الأبجدية الثمودية",
-            "images": [
-                "../data/letters/thamudic_letters\\letter_17\\letter_16.png"
-            ]
+            "name": "رمز_سابع_عشر"
         },
         {
             "index": 17,
@@ -159,7 +155,7 @@
             "name": "رمز_ثامن_عشر",
             "description": "الرمز الثامن عشر في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_18\\letter_17.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_18\\letter_18_0.png"
             ]
         },
         {
@@ -168,7 +164,7 @@
             "name": "رمز_تاسع_عشر",
             "description": "الرمز التاسع عشر في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_19\\letter_18.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_19\\letter_19_0.png"
             ]
         },
         {
@@ -177,7 +173,7 @@
             "name": "رمز_عشرون",
             "description": "الرمز العشرون في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_20\\letter_19.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_20\\letter_20_0.png"
             ]
         },
         {
@@ -186,7 +182,7 @@
             "name": "رمز_حادي_وعشرون",
             "description": "الرمز الحادي والعشرون في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_21\\letter_20.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_21\\letter_21_0.png"
             ]
         },
         {
@@ -195,7 +191,7 @@
             "name": "رمز_ثاني_وعشرون",
             "description": "الرمز الثاني والعشرون في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_22\\letter_21.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_22\\letter_22_0.png"
             ]
         },
         {
@@ -204,7 +200,7 @@
             "name": "رمز_ثالث_وعشرون",
             "description": "الرمز الثالث والعشرون في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_23\\letter_22.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_23\\letter_23_0.png"
             ]
         },
         {
@@ -213,7 +209,7 @@
             "name": "رمز_رابع_وعشرون",
             "description": "الرمز الرابع والعشرون في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_24\\letter_23.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_24\\letter_24_0.png"
             ]
         },
         {
@@ -222,7 +218,7 @@
             "name": "رمز_خامس_وعشرون",
             "description": "الرمز الخامس والعشرون في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_25\\letter_24.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_25\\letter_25_0.png"
             ]
         },
         {
@@ -231,7 +227,7 @@
             "name": "رمز_سادس_وعشرون",
             "description": "الرمز السادس والعشرون في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_26\\letter_25.png"
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_26\\letter_26_0.png"
             ]
         },
         {
@@ -240,9 +236,9 @@
             "name": "رمز_سابع_وعشرون",
             "description": "الرمز السابع والعشرون في الأبجدية الثمودية",
             "images": [
-                "../data/letters/thamudic_letters\\letter_27\\letter_26.png"
-            ]
-        }
+                "d:\\Work\\rizg\\Thamudic_language_recognition\\projact\\thamudic_env\\data\\letters\\thamudic_letters\\letter_27\\letter_27_0.png"
+            ]     
+           }
     ],
     "arabic_letters": [
         {
