@@ -63,6 +63,13 @@ source thamudic_env/bin/activate  # On Windows: thamudic_env\Scripts\activate
 pip install -r requirements.txt
 ```
 
+## Features
+- Advanced image preprocessing for ancient inscriptions
+- Character segmentation and recognition
+- Web interface for easy interaction
+- Support for both single characters and full inscriptions
+- Visualization of recognition results
+
 ## Usage
 
 ### Image Collection and Organization
@@ -76,6 +83,47 @@ This script validates, cleans, and organizes Thamudic letter images.
 python Scripts/data_preprocessing.py
 ```
 Preprocesses images, applies augmentation, and prepares data for model training.
+
+### Training the Model
+```bash
+python src/train.py
+```
+
+### Using the Web Interface
+1. Start the web application:
+```bash
+streamlit run src/app.py
+```
+2. Open your web browser and navigate to the displayed URL
+3. Upload an image of a Thamudic inscription
+4. View the recognition results and visualization
+
+### Using the Command Line Interface
+```bash
+python src/predict.py --image_path path/to/your/image.png
+```
+
+## Project Components
+
+### 1. Image Preprocessing (`image_preprocessing.py`)
+- Image enhancement
+- Character segmentation
+- Data augmentation
+
+### 2. Model Architecture (`model.py`)
+- CNN-based recognition model
+- Support for multiple character classes
+- Training and validation pipelines
+
+### 3. Prediction System (`predict.py`)
+- Single character recognition
+- Full inscription processing
+- Confidence scoring
+
+### 4. Web Interface (`app.py`)
+- User-friendly interface
+- Real-time processing
+- Result visualization
 
 ## Project Challenges
 - Limited Thamudic language datasets
