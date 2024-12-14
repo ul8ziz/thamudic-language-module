@@ -82,14 +82,25 @@ class ThamudicImagePreprocessor:
             
         raise ValueError(f"Unsupported image type: {type(image)}")
 
-    def preprocess_image(self, image_path: str) -> torch.Tensor:
+    def preprocess_image(self, image_input: Union[str, np.ndarray]) -> torch.Tensor:
         """
         Preprocess a single image for the Thamudic recognition model
+        
+        Args:
+            image_input: Either a path to an image file (str) or a numpy array containing the image
         """
-        # Read image
-        image = Image.open(image_path).convert('L')  # Convert to grayscale
-        if image is None:
-            raise ValueError(f"Could not read image at {image_path}")
+        # Handle different input types
+        if isinstance(image_input, str):
+            image = Image.open(image_input).convert('L')  # Convert to grayscale
+            if image is None:
+                raise ValueError(f"Could not read image at {image_input}")
+        elif isinstance(image_input, np.ndarray):
+            # Convert numpy array to PIL Image
+            image = Image.fromarray(image_input)
+            if image.mode != 'L':
+                image = image.convert('L')  # Convert to grayscale if needed
+        else:
+            raise ValueError(f"Unsupported image input type: {type(image_input)}")
         
         # Apply preprocessing
         processed = self.apply_transforms(image, self.val_transforms)

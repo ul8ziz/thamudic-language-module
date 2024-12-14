@@ -7,7 +7,7 @@ import argparse
 from pathlib import Path
 import cv2
 import numpy as np
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 
 class ThamudicPredictor:
     def __init__(self, model_path: str, label_mapping_path: str):
@@ -34,6 +34,15 @@ class ThamudicPredictor:
     def predict_single_character(self, image: np.ndarray) -> Tuple[str, float]:
         """
         Predict a single Thamudic character from an image
+        
+        Args:
+            image (np.ndarray): Input image array
+        
+        Returns:
+            Tuple[str, float]: Predicted character and confidence score
+        
+        Raises:
+            KeyError: If predicted index is not found in label mapping
         """
         # Preprocess image
         processed_image = self.preprocessor.preprocess_image(image)
@@ -48,10 +57,14 @@ class ThamudicPredictor:
             pred_idx = int(torch.argmax(output, dim=1).item())
             confidence = probabilities[0][pred_idx].item()
         
+        # Ensure predicted index exists in mapping
+        if pred_idx not in self.idx_to_label:
+            raise KeyError(f"Predicted index {pred_idx} not found in label mapping")
+        
         predicted_char = self.idx_to_label[pred_idx]
         return predicted_char, confidence
     
-    def predict_inscription(self, image_path: str, visualization_path: str = None) -> List[Tuple[str, float]]:
+    def predict_inscription(self, image_path: str, visualization_path: Optional[str] = None) -> List[Tuple[str, float]]:
         """
         Predict all characters in a Thamudic inscription
         """
@@ -74,7 +87,7 @@ class ThamudicPredictor:
             predictions.append((char, confidence))
             
             # Add visualization
-            if visualization_path:
+            if visualization_path is not None:
                 x = i * (image.shape[1] // len(character_images))
                 y = image.shape[0] - 30
                 cv2.putText(
@@ -87,7 +100,7 @@ class ThamudicPredictor:
                     2
                 )
         
-        if visualization_path:
+        if visualization_path is not None:
             cv2.imwrite(visualization_path, visualization_image)
         
         return predictions
