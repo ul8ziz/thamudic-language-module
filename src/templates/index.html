@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>محرك التعرف على الكتابات الثمودية</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h2>محرك التعرف على الكتابات الثمودية</h2>
+                    </div>
+                    <div class="card-body">
+                        <!-- Upload Form -->
+                        <form id="uploadForm" class="mb-4">
+                            <div class="mb-3">
+                                <label for="imageInput" class="form-label">اختر صورة للتحليل</label>
+                                <input type="file" class="form-control" id="imageInput" accept=".jpg,.jpeg,.png" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary">تحليل الصورة</button>
+                        </form>
+
+                        <!-- Preview -->
+                        <div id="imagePreview" class="mb-4 text-center d-none">
+                            <h4>الصورة المختارة</h4>
+                            <img id="preview" class="img-fluid mb-3" alt="Preview">
+                        </div>
+
+                        <!-- Results -->
+                        <div id="results" class="d-none">
+                            <h4>النتائج</h4>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead>
+                                        <tr>
+                                            <th>الحرف</th>
+                                            <th>نسبة الثقة</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="resultsBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Loading -->
+                        <div id="loading" class="text-center d-none">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">جاري التحليل...</span>
+                            </div>
+                            <p>جاري تحليل الصورة...</p>
+                        </div>
+
+                        <!-- Error -->
+                        <div id="error" class="alert alert-danger d-none"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
