@@ -15,10 +15,9 @@ def main():
 
     # Configure paths
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.join(base_dir, 'data')
+    data_dir = os.path.join(base_dir, 'data', 'letters', 'thamudic_letters')
     models_dir = os.path.join(base_dir, 'models')
-    letter_mapping_file = os.path.join(base_dir, 'models', 'configs', 'letter_mapping.json')
-    label_mapping_file = os.path.join(base_dir, 'models', 'configs', 'label_mapping.json')
+    label_mapping_file = os.path.join(base_dir, 'data', 'letters', 'letter_mapping.json')
 
     # Create directories if they don't exist
     os.makedirs(models_dir, exist_ok=True)
@@ -26,7 +25,6 @@ def main():
     print("Loading data...")
     images, labels, label_names = load_data(
         data_dir=data_dir,
-        letter_mapping_file=letter_mapping_file,
         label_mapping_file=label_mapping_file
     )
 

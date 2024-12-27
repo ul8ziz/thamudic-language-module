@@ -1,9 +1,11 @@
 import torch
 from PIL import Image
 import numpy as np
-from ..data.image_augmentation import ThamudicImagePreprocessor
-from .model_trainer import ThamudicModel
+from src.data.image_augmentation import ThamudicImagePreprocessor
+from src.core.model_trainer import ThamudicModel
 import json
+import argparse
+from pathlib import Path
 
 class InferenceEngine:
     def __init__(self, model_path, label_mapping_path):

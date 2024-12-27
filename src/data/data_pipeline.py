@@ -41,45 +41,71 @@ def preprocess_image(image, target_size=(128, 128)):
     
     return image
 
-def load_data(data_dir, letter_mapping_file, label_mapping_file, target_size=(128, 128)):
+def load_data(data_dir, label_mapping_file, target_size=(128, 128)):
     """
     تحميل البيانات مع تحسينات في المعالجة
     """
     print("\nLoading and preprocessing data...")
     
-    # Load mappings
-    with open(letter_mapping_file, 'r', encoding='utf-8') as f:
-        letter_mapping = json.load(f)
+    # Load label mapping
     with open(label_mapping_file, 'r', encoding='utf-8') as f:
-        label_mapping = json.load(f)
+        mapping_data = json.load(f)
+        
+    # Create label mapping from thamudic letters
+    label_mapping = {str(letter['index'] + 1): letter['symbol'] for letter in mapping_data['thamudic_letters']}
     
     images = []
     labels = []
     label_names = []
     
+    if not os.path.exists(data_dir):
+        raise ValueError(f"Data directory not found: {data_dir}")
+    
+    # Get list of letter directories
+    letter_dirs = [d for d in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir, d))]
+    letter_dirs.sort(key=lambda x: int(x.split('_')[1]))  # Sort by letter number
+    
+    if not letter_dirs:
+        raise ValueError(f"No letter directories found in {data_dir}")
+    
     # Track progress
-    total_letters = len(letter_mapping)
+    total_letters = len(letter_dirs)
     processed_letters = 0
     
-    for letter, image_info in letter_mapping.items():
+    for letter_dir in letter_dirs:
         processed_letters += 1
-        print(f"\rProcessing letters: {processed_letters}/{total_letters}", end="")
+        print(f"\rProcessing letter: {processed_letters}/{total_letters}", end="")
         
-        if not image_info.get('images'):
+        # Extract letter number from directory name
+        letter_num = letter_dir.split('_')[1]
+        
+        # Get label from mapping
+        symbol = label_mapping.get(letter_num)
+        if symbol is None:
+            print(f"\nWarning: No label mapping found for letter {letter_num}")
             continue
             
-        label = label_mapping.get(letter)
-        if label is None:
+        # Find the corresponding letter info
+        letter_info = next((letter for letter in mapping_data['thamudic_letters'] 
+                          if letter['index'] == int(letter_num) - 1), None)
+        
+        if letter_info is None:
+            print(f"\nWarning: No letter information found for letter {letter_num}")
             continue
             
-        for image_path in image_info['images']:
+        letter_path = os.path.join(data_dir, letter_dir)
+        image_files = [f for f in os.listdir(letter_path) 
+                      if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp'))]
+        
+        for image_file in image_files:
+            image_path = os.path.join(letter_path, image_file)
             try:
                 # Load and preprocess image
                 image = cv2.imread(image_path)
                 if image is None:
                     print(f"\nWarning: Could not load image {image_path}")
                     continue
-                    
+                
                 # Convert BGR to RGB
                 image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
                 
@@ -87,8 +113,8 @@ def load_data(data_dir, letter_mapping_file, label_mapping_file, target_size=(12
                 processed_image = preprocess_image(image, target_size)
                 
                 images.append(processed_image)
-                labels.append(label)
-                label_names.append(letter)
+                labels.append(int(letter_num) - 1)  # Use 0-based index for labels
+                label_names.append(letter_info['symbol'])
                 
             except Exception as e:
                 print(f"\nError processing image {image_path}: {str(e)}")
@@ -97,7 +123,7 @@ def load_data(data_dir, letter_mapping_file, label_mapping_file, target_size=(12
     print("\nData loading completed!")
     
     if not images:
-        raise ValueError("No valid images were loaded!")
+        raise ValueError("No valid images were loaded! Check the data directory structure and image files.")
     
     # Convert to numpy arrays
     images = np.array(images)
@@ -110,11 +136,19 @@ def load_data(data_dir, letter_mapping_file, label_mapping_file, target_size=(12
     print(f"Image shape: {images[0].shape}")
     
     # Print class distribution
-    unique_labels, counts = np.unique(labels, return_counts=True)
+    class_counts = {}
+    for label in labels:
+        if label not in class_counts:
+            class_counts[label] = 0
+        class_counts[label] += 1
+    
     print("\nClass distribution:")
-    for label, count in zip(unique_labels, counts):
-        letter = [k for k, v in label_mapping.items() if v == label][0]
-        print(f"Class {label} ({letter}): {count} images")
+    for label, count in class_counts.items():
+        letter_info = mapping_data['thamudic_letters'][label]
+        try:
+            print(f"Class {label} ({letter_info['name']}): {count} images")
+        except UnicodeEncodeError:
+            print(f"Class {label}: {count} images")
     
     return images, labels, label_names
 
@@ -340,7 +374,7 @@ def get_data_loaders(data_dir: str, label_mapping_file: str, batch_size: int = 3
 
 def main():
     # Load the data
-    images, labels, label_names = load_data(data_dir='path_to_data', letter_mapping_file='path_to_letter_mapping', label_mapping_file='path_to_label_mapping')
+    images, labels, label_names = load_data(data_dir='path_to_data', label_mapping_file='path_to_label_mapping', target_size=(128, 128))
     
     # Split the data
     x_train, x_test, x_val, y_train, y_test, y_val = split_data(images, labels)

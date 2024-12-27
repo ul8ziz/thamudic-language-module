@@ -1,8 +1,7 @@
 import streamlit as st
 import os
-import numpy as np
 from PIL import Image, ImageEnhance
-from src.core.inference_engine import InferenceEngine
+from core.inference_engine import InferenceEngine
 
 # تهيئة الصفحة
 st.set_page_config(
