@@ -1,85 +1,102 @@
-import torch
-from PIL import Image, ImageEnhance
-from torchvision import transforms as T
-from typing import Union
+import cv2
 import numpy as np
+from PIL import Image, ImageEnhance
+import torch
+import torchvision.transforms as transforms
 
 class ThamudicImagePreprocessor:
     def __init__(self):
-        """
-        تهيئة معالج الصور
-        """
-        self.val_transforms = T.Compose([
-            T.Resize((128, 128)),  # تغيير حجم الصورة
-            T.ToTensor(),
-            T.Normalize(mean=[0.485], std=[0.229])  # تطبيع القيم
+        """تهيئة معالج الصور للنصوص الثمودية"""
+        self.target_size = (64, 64)
+        self.transform = transforms.Compose([
+            transforms.Resize(self.target_size),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                              std=[0.229, 0.224, 0.225])
         ])
-        
-        # إضافة تحويلات للتدريب لزيادة تنوع البيانات
-        self.train_transforms = T.Compose([
-            T.RandomRotation(10),  # دوران عشوائي
-            T.RandomAffine(
-                degrees=0,
-                translate=(0.1, 0.1),  # إزاحة عشوائية
-                scale=(0.9, 1.1),  # تغيير الحجم عشوائياً
-                shear=5  # انحراف عشوائي
-            ),
-            T.RandomPerspective(distortion_scale=0.2),  # تغيير المنظور
-            T.Resize((128, 128)),
-            T.ToTensor(),
-            T.Normalize(mean=[0.485], std=[0.229])
-        ])
-
-    def ensure_tensor(self, image: Union[torch.Tensor, Image.Image]) -> torch.Tensor:
-        """
-        التأكد من أن الصورة في شكل تنسور
-        """
-        if isinstance(image, Image.Image):
-            # تحويل الصورة إلى تدرجات الرمادي إذا كانت ملونة
-            if image.mode != 'L':
-                image = image.convert('L')
-            return self.val_transforms(image)
-        return image
-
-    def preprocess_image(self, image: Union[str, Image.Image], is_training: bool = False) -> torch.Tensor:
-        """
-        معالجة الصورة وتحويلها إلى تنسور
-        """
-        if isinstance(image, str):
-            image = Image.open(image).convert('L')
-        elif isinstance(image, Image.Image) and image.mode != 'L':
-            image = image.convert('L')
-
-        transforms = self.train_transforms if is_training else self.val_transforms
-        return transforms(image)
-
-    def enhance_image(self, image: Image.Image, contrast: float = 1.5, brightness: float = 1.2, sharpness: float = 1.3) -> Image.Image:
-        """
-        تحسين جودة الصورة
-        """
-        # تحويل الصورة إلى تدرجات الرمادي
-        if image.mode != 'L':
-            image = image.convert('L')
-        
-        # تحسين السطوع
-        enhancer = ImageEnhance.Brightness(image)
-        image = enhancer.enhance(brightness)
-        
-        # تحسين التباين
+    
+    def enhance_contrast(self, image):
+        """تحسين التباين في الصورة"""
         enhancer = ImageEnhance.Contrast(image)
-        image = enhancer.enhance(contrast)
+        return enhancer.enhance(2.0)
+    
+    def denoise(self, image):
+        """إزالة الضوضاء من الصورة"""
+        # تحويل الصورة إلى مصفوفة numpy
+        img_array = np.array(image)
         
-        # تحسين الحدة
+        # تطبيق إزالة الضوضاء
+        denoised = cv2.fastNlMeansDenoisingColored(
+            img_array,
+            None,
+            h=10,
+            hColor=10,
+            templateWindowSize=7,
+            searchWindowSize=21
+        )
+        
+        return Image.fromarray(denoised)
+    
+    def sharpen(self, image):
+        """تحسين حدة الصورة"""
         enhancer = ImageEnhance.Sharpness(image)
-        image = enhancer.enhance(sharpness)
+        return enhancer.enhance(1.5)
+    
+    def preprocess_for_model(self, image):
+        """تجهيز الصورة للنموذج"""
+        # تطبيق التحويلات
+        tensor = self.transform(image)
         
-        return image
-
-    def batch_preprocess(self, images: list, is_training: bool = False) -> torch.Tensor:
-        """
-        معالجة مجموعة من الصور
-        """
-        processed = []
-        for img in images:
-            processed.append(self.preprocess_image(img, is_training))
-        return torch.stack(processed)
+        # تحويل التنسور إلى numpy array
+        return tensor.numpy()
+    
+    def binarize(self, image):
+        """تحويل الصورة إلى ثنائية (أسود وأبيض)"""
+        # تحويل الصورة إلى تدرج رمادي
+        gray = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
+        
+        # تطبيق عتبة Otsu
+        _, binary = cv2.threshold(
+            gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+        )
+        
+        return Image.fromarray(binary)
+    
+    def remove_background(self, image):
+        """إزالة خلفية الصورة"""
+        # تحويل الصورة إلى RGBA
+        rgba = image.convert('RGBA')
+        data = np.array(rgba)
+        
+        # إنشاء قناع للخلفية
+        r, g, b, a = data.T
+        light_areas = (r > 200) & (g > 200) & (b > 200)
+        data[..., :][light_areas.T] = (255, 255, 255, 0)
+        
+        return Image.fromarray(data)
+    
+    def deskew(self, image):
+        """تصحيح ميل النص"""
+        # تحويل الصورة إلى تدرج رمادي
+        gray = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
+        
+        # حساب زاوية الميل
+        coords = np.column_stack(np.where(gray < 127))
+        angle = cv2.minAreaRect(coords)[-1]
+        
+        if angle < -45:
+            angle = 90 + angle
+            
+        # تدوير الصورة
+        (h, w) = gray.shape[:2]
+        center = (w // 2, h // 2)
+        M = cv2.getRotationMatrix2D(center, angle, 1.0)
+        rotated = cv2.warpAffine(
+            np.array(image),
+            M,
+            (w, h),
+            flags=cv2.INTER_CUBIC,
+            borderMode=cv2.BORDER_REPLICATE
+        )
+        
+        return Image.fromarray(rotated)

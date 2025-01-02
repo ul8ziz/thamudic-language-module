@@ -3,192 +3,171 @@ import json
 import cv2
 import numpy as np
 from sklearn.preprocessing import LabelEncoder
-from sklearn.model_selection import train_test_split
-import albumentations as A
-from typing import Tuple, List, Any
-import torch
-from torch.utils.data import Dataset, DataLoader
-from PIL import Image
-from pathlib import Path
 import tensorflow as tf
+import albumentations as A
+from pathlib import Path
+from typing import List, Tuple, Dict, Any
+import logging
+import tensorflow_addons as tfa
+from collections import Counter
 
-def preprocess_image(image, target_size=(128, 128)):
-    """
-    تحسين معالجة الصور قبل التدريب
-    """
-    # Convert to float32 and normalize
-    image = tf.cast(image, tf.float32) / 255.0
-    
-    # Add padding to make the image square while preserving aspect ratio
-    shape = tf.shape(image)
-    height, width = shape[0], shape[1]
-    max_dim = tf.maximum(height, width)
-    pad_height = (max_dim - height) // 2
-    pad_width = (max_dim - width) // 2
-    
-    # Add padding
-    paddings = tf.convert_to_tensor([[pad_height, max_dim - height - pad_height],
-                                   [pad_width, max_dim - width - pad_width],
-                                   [0, 0]])
-    image = tf.pad(image, paddings, mode='CONSTANT', constant_values=1.0)
-    
-    # Resize to target size
-    image = tf.image.resize(image, target_size, method='bilinear')
-    
-    # Ensure correct number of channels
-    if image.shape[-1] == 1:
-        image = tf.image.grayscale_to_rgb(image)
-    
-    return image
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
-def load_data(data_dir, label_mapping_file, target_size=(128, 128)):
+def augment_image(img):
     """
-    تحميل البيانات مع تحسينات في المعالجة
+    توليد نسخة معدلة من الصورة مع تحسينات متقدمة
     """
-    print("\nLoading and preprocessing data...")
-    
-    # Load label mapping
-    with open(label_mapping_file, 'r', encoding='utf-8') as f:
-        mapping_data = json.load(f)
+    try:
+        # Random flip
+        if tf.random.uniform([], 0, 1) > 0.5:
+            img = tf.image.flip_left_right(img)
         
-    # Create label mapping from thamudic letters
-    label_mapping = {str(letter['index'] + 1): letter['symbol'] for letter in mapping_data['thamudic_letters']}
-    
-    images = []
-    labels = []
-    label_names = []
-    
-    if not os.path.exists(data_dir):
-        raise ValueError(f"Data directory not found: {data_dir}")
-    
-    # Get list of letter directories
-    letter_dirs = [d for d in os.listdir(data_dir) if os.path.isdir(os.path.join(data_dir, d))]
-    letter_dirs.sort(key=lambda x: int(x.split('_')[1]))  # Sort by letter number
-    
-    if not letter_dirs:
-        raise ValueError(f"No letter directories found in {data_dir}")
-    
-    # Track progress
-    total_letters = len(letter_dirs)
-    processed_letters = 0
-    
-    for letter_dir in letter_dirs:
-        processed_letters += 1
-        print(f"\rProcessing letter: {processed_letters}/{total_letters}", end="")
+        # Random rotation
+        angle = tf.random.uniform([], -0.2, 0.2)
+        img = tfa.image.rotate(img, angle)
         
-        # Extract letter number from directory name
-        letter_num = letter_dir.split('_')[1]
+        # Random brightness and contrast
+        img = tf.image.random_brightness(img, 0.2)
+        img = tf.image.random_contrast(img, 0.8, 1.2)
         
-        # Get label from mapping
-        symbol = label_mapping.get(letter_num)
-        if symbol is None:
-            print(f"\nWarning: No label mapping found for letter {letter_num}")
-            continue
+        # Random saturation and hue
+        img = tf.image.random_saturation(img, 0.8, 1.2)
+        img = tf.image.random_hue(img, 0.1)
+        
+        # Ensure values are in [0,1]
+        img = tf.clip_by_value(img, 0.0, 1.0)
+        
+        return img
+        
+    except Exception as e:
+        logging.error(f"Error during augmentation: {str(e)}")
+        return None
+
+def preprocess_image(image_path):
+    """
+    معالجة الصورة وتحويلها إلى التنسيق المناسب
+    """
+    try:
+        # Read image
+        img = tf.io.read_file(image_path)
+        img = tf.image.decode_image(img, channels=3, expand_animations=False)
+        
+        # Convert to float32
+        img = tf.cast(img, tf.float32)
+        
+        # Normalize to [0,1]
+        img = img / 255.0
+        
+        # Get image dimensions
+        h = tf.shape(img)[0]
+        w = tf.shape(img)[1]
+        
+        # Calculate scaling factor
+        target_size = tf.constant([128, 128], dtype=tf.int32)
+        scale = tf.minimum(
+            tf.cast(target_size[0], tf.float32) / tf.cast(h, tf.float32),
+            tf.cast(target_size[1], tf.float32) / tf.cast(w, tf.float32)
+        )
+        
+        # Calculate new dimensions
+        new_h = tf.cast(tf.cast(h, tf.float32) * scale, tf.int32)
+        new_w = tf.cast(tf.cast(w, tf.float32) * scale, tf.int32)
+        
+        # Resize image
+        img = tf.image.resize(img, [new_h, new_w])
+        
+        # Calculate padding
+        pad_h = target_size[0] - new_h
+        pad_w = target_size[1] - new_w
+        
+        # Pad image
+        paddings = [[0, pad_h], [0, pad_w], [0, 0]]
+        img = tf.pad(img, paddings, mode='CONSTANT', constant_values=1.0)
+        
+        # Ensure output shape
+        img = tf.ensure_shape(img, [128, 128, 3])
+        
+        return img
+        
+    except Exception as e:
+        logging.error(f"Error processing image {image_path}: {str(e)}")
+        return None
+
+def load_data(data_dir, label_mapping_file):
+    """
+    تحميل وتحسين البيانات مع معالجة متقدمة للصور
+    """
+    try:
+        # Load label mapping
+        with open(label_mapping_file, 'r', encoding='utf-8') as f:
+            mapping_data = json.load(f)
+            letter_mapping = mapping_data['thamudic_letters']
+        
+        images = []
+        labels = []
+        label_counts = {}
+        
+        # Process each letter directory
+        for letter_idx in range(len(letter_mapping)):
+            letter_dir = f"letter_{letter_idx + 1}"  # Directory names start from 1
+            letter_path = os.path.join(data_dir, letter_dir)
             
-        # Find the corresponding letter info
-        letter_info = next((letter for letter in mapping_data['thamudic_letters'] 
-                          if letter['index'] == int(letter_num) - 1), None)
-        
-        if letter_info is None:
-            print(f"\nWarning: No letter information found for letter {letter_num}")
-            continue
-            
-        letter_path = os.path.join(data_dir, letter_dir)
-        image_files = [f for f in os.listdir(letter_path) 
-                      if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp'))]
-        
-        for image_file in image_files:
-            image_path = os.path.join(letter_path, image_file)
-            try:
-                # Load and preprocess image
-                image = cv2.imread(image_path)
-                if image is None:
-                    print(f"\nWarning: Could not load image {image_path}")
-                    continue
-                
-                # Convert BGR to RGB
-                image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-                
-                # Apply preprocessing
-                processed_image = preprocess_image(image, target_size)
-                
-                images.append(processed_image)
-                labels.append(int(letter_num) - 1)  # Use 0-based index for labels
-                label_names.append(letter_info['symbol'])
-                
-            except Exception as e:
-                print(f"\nError processing image {image_path}: {str(e)}")
+            if not os.path.exists(letter_path):
+                logging.warning(f"Directory not found: {letter_path}")
                 continue
-    
-    print("\nData loading completed!")
-    
-    if not images:
-        raise ValueError("No valid images were loaded! Check the data directory structure and image files.")
-    
-    # Convert to numpy arrays
-    images = np.array(images)
-    labels = np.array(labels)
-    
-    # Print dataset statistics
-    print(f"\nDataset Statistics:")
-    print(f"Total images: {len(images)}")
-    print(f"Number of classes: {len(np.unique(labels))}")
-    print(f"Image shape: {images[0].shape}")
-    
-    # Print class distribution
-    class_counts = {}
-    for label in labels:
-        if label not in class_counts:
-            class_counts[label] = 0
-        class_counts[label] += 1
-    
-    print("\nClass distribution:")
-    for label, count in class_counts.items():
-        letter_info = mapping_data['thamudic_letters'][label]
-        try:
-            print(f"Class {label} ({letter_info['name']}): {count} images")
-        except UnicodeEncodeError:
-            print(f"Class {label}: {count} images")
-    
-    return images, labels, label_names
-
-def augment_image(image, num_augmentations=3):
-    """
-    Generate augmented versions of the input image
-    
-    Args:
-        image (np.ndarray): Input image
-        num_augmentations (int): Number of augmented versions required
-    
-    Returns:
-        List[np.ndarray]: List of augmented images
-    """
-    augmentations = [
-        A.Compose([
-            A.RandomRotate90(p=0.5),
-            A.Flip(p=0.5),
-            A.RandomBrightnessContrast(p=0.3),
-            A.GaussNoise(p=0.2),
-            A.ShiftScaleRotate(
-                shift_limit=0.1, 
-                scale_limit=0.1, 
-                rotate_limit=15, 
-                p=0.5
-            ),
-        ])
-        for _ in range(num_augmentations)
-    ]
-    
-    augmented_images = []
-    for aug in augmentations:
-        # Ensure the image is of type uint8
-        image_uint8 = (image * 255).astype(np.uint8)
+                
+            # Get all image files
+            img_files = [f for f in os.listdir(letter_path)
+                        if f.lower().endswith(('.png', '.jpg', '.jpeg'))]
+            
+            if not img_files:
+                logging.warning(f"No images found in {letter_path}")
+                continue
+            
+            # Process each image
+            for img_file in img_files:
+                img_path = os.path.join(letter_path, img_file)
+                img = preprocess_image(img_path)
+                
+                if img is not None:
+                    images.append(img)
+                    labels.append(letter_idx)  # Use 0-based index for labels
+                    label_counts[letter_idx] = label_counts.get(letter_idx, 0) + 1
+                    
+                    # Generate augmented images for underrepresented classes
+                    if label_counts[letter_idx] < 10:  # Minimum samples per class
+                        for _ in range(3):  # Generate 3 augmented versions
+                            aug_img = augment_image(img)
+                            if aug_img is not None:
+                                images.append(aug_img)
+                                labels.append(letter_idx)
+                                label_counts[letter_idx] += 1
         
-        augmented = aug(image=image_uint8)['image']
-        augmented_normalized = augmented / 255.0
-        augmented_images.append(augmented_normalized)
-    
-    return augmented_images
+        # Convert to numpy arrays
+        images = np.array(images)
+        labels = np.array(labels)
+        
+        # Print dataset statistics
+        logging.info("\nDataset Statistics:")
+        logging.info(f"Total images: {len(images)}")
+        logging.info(f"Number of classes: {len(letter_mapping)}")
+        logging.info(f"Images per class: {dict(Counter(labels))}")
+        
+        if len(images) == 0:
+            raise ValueError("No valid images were loaded")
+            
+        # Convert labels to categorical
+        labels = tf.keras.utils.to_categorical(labels, num_classes=len(letter_mapping))
+            
+        return images, labels, len(letter_mapping)
+        
+    except Exception as e:
+        logging.error(f"Error loading data: {str(e)}")
+        raise
 
 def split_data(
     images: List[np.ndarray], 
@@ -277,11 +256,13 @@ def split_data(
     
     return x_train, x_test, x_val, y_train, y_test, y_val
 
-class ThamudicDataset(Dataset):
-    def __init__(self, data_dir: str, label_mapping_file: str, transform=None, train: bool = True):
-        self.data_dir = Path(data_dir) / 'thamudic'
+class ThamudicDataset:
+    """
+    مجموعة بيانات الخط الثمودي مع معالجة متقدمة للصور
+    """
+    def __init__(self, data_dir: str, label_mapping_file: str, transform=None):
+        self.data_dir = Path(data_dir)
         self.transform = transform
-        self.train = train
         
         # Load label mapping
         with open(label_mapping_file, 'r', encoding='utf-8') as f:
@@ -289,67 +270,55 @@ class ThamudicDataset(Dataset):
             
         # Get all image paths
         self.image_paths = []
-        for img_path in self.data_dir.glob('**/*.png'):
-            if img_path.stem.startswith('letter_'):
-                self.image_paths.append(img_path)
+        self.labels = []
+        
+        # Create label to index mapping
+        self.label_to_index = {str(k): i for i, k in enumerate(sorted(self.label_mapping.keys()))}
+        
+        # Load all images and labels
+        for letter_dir in os.listdir(self.data_dir):
+            if not letter_dir.startswith('letter_'):
+                continue
+                
+            letter_num = letter_dir.split('_')[1]
+            if letter_num not in self.label_to_index:
+                continue
+                
+            letter_path = self.data_dir / letter_dir
+            for img_file in letter_path.glob('*.png'):
+                self.image_paths.append(img_file)
+                self.labels.append(self.label_to_index[letter_num])
         
         if not self.image_paths:
             raise ValueError(f"No images found in {data_dir}")
             
-        print(f"Found {len(self.image_paths)} images in {'training' if train else 'validation'} set")
-        
-    def __len__(self) -> int:
+        logging.info(f"Found {len(self.image_paths)} images")
+        logging.info(f"Number of classes: {len(set(self.labels))}")
+    
+    def __len__(self):
         return len(self.image_paths)
+    
+    def __getitem__(self, idx: int):
+        img_path = self.image_paths[idx]
+        label = self.labels[idx]
         
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, int]:
-        img_path = str(self.image_paths[idx])
-        image = Image.open(img_path).convert('L')
+        # Load and preprocess image
+        img = preprocess_image(img_path)
         
+        # Apply additional transforms if specified
         if self.transform:
-            image = self.transform(image)
-            
-        label_str = self.image_paths[idx].stem
-        label = int(self.label_mapping[label_str])
-        return image, label
-
-class AdvancedImageProcessor:
-    def __init__(self):
-        self.augmentation = A.Compose([
-            A.OneOf([
-                A.GaussNoise(var_limit=(10.0, 50.0), p=0.5),
-                A.MultiplicativeNoise(multiplier=(0.9, 1.1), p=0.5),
-            ], p=0.2),
-            A.OneOf([
-                A.MotionBlur(blur_limit=3, p=0.5),
-                A.MedianBlur(blur_limit=3, p=0.5),
-                A.GaussianBlur(blur_limit=3, p=0.5),
-            ], p=0.2),
-            A.OneOf([
-                A.OpticalDistortion(distort_limit=1.0, p=0.5),
-                A.GridDistortion(num_steps=5, distort_limit=0.3, p=0.5),
-            ], p=0.2),
-            A.OneOf([
-                A.CLAHE(clip_limit=2.0, p=0.5),
-                A.Sharpen(alpha=(0.2, 0.5), lightness=(0.5, 1.0), p=0.5),
-            ], p=0.2),
-        ])
-
-    def preprocess_image(self, image: np.ndarray) -> np.ndarray:
-        if len(image.shape) == 3:
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        else:
-            gray = image
+            img = self.transform(image=img)['image']
         
-        bilateral = cv2.bilateralFilter(gray, d=9, sigmaColor=75, sigmaSpace=75)
-        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-        enhanced = clahe.apply(bilateral)
+        return img, label
         
-        # Apply augmentation if available
-        if self.augmentation:
-            augmented = self.augmentation(image=enhanced)
-            enhanced = augmented['image']
-            
-        return enhanced
+    def get_class_weights(self):
+        """
+        حساب أوزان الفئات للتعامل مع عدم التوازن في البيانات
+        """
+        class_counts = np.bincount(self.labels)
+        total_samples = len(self.labels)
+        class_weights = total_samples / (len(class_counts) * class_counts)
+        return class_weights
 
 def get_data_loaders(data_dir: str, label_mapping_file: str, batch_size: int = 32, num_workers: int = 4):
     """Create train and validation data loaders"""
@@ -374,7 +343,7 @@ def get_data_loaders(data_dir: str, label_mapping_file: str, batch_size: int = 3
 
 def main():
     # Load the data
-    images, labels, label_names = load_data(data_dir='path_to_data', label_mapping_file='path_to_label_mapping', target_size=(128, 128))
+    images, labels, num_classes = load_data(data_dir='path_to_data', label_mapping_file='path_to_label_mapping')
     
     # Split the data
     x_train, x_test, x_val, y_train, y_test, y_val = split_data(images, labels)

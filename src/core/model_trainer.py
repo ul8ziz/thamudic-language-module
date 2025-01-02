@@ -5,286 +5,226 @@ import tensorflow as tf
 from tensorflow.keras import layers, models
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.applications import EfficientNetB0
-from src.data.data_pipeline import load_data, split_data
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping, ReduceLROnPlateau, CSVLogger
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import matplotlib.pyplot as plt
 import seaborn as sns
-import torch
-import torch.nn as nn
+import logging
 
 def create_model(num_classes):
     """
-    إنشاء نموذج شبكة عصبية تلافيفية للتصنيف مع تحسينات
+    إنشاء نموذج CNN للتعرف على الحروف الثمودية
     """
-    # Use a more powerful base model
-    base_model = EfficientNetB0(
-        input_shape=(128, 128, 3),
-        include_top=False,
-        weights='imagenet'
-    )
-    
-    # Unfreeze some layers for fine-tuning
-    for layer in base_model.layers[-30:]:
-        layer.trainable = True
-
     model = models.Sequential([
-        # Convert single channel to 3 channels
-        layers.Lambda(lambda x: tf.image.grayscale_to_rgb(tf.cast(x, tf.float32))),
+        # Input layer
+        layers.Input(shape=(128, 128, 3)),
         
-        # Base model
-        base_model,
-        
-        # Custom top layers with stronger regularization
-        layers.GlobalAveragePooling2D(),
+        # First convolutional block
+        layers.Conv2D(32, (3, 3), activation='relu', padding='same'),
         layers.BatchNormalization(),
-        layers.Dense(256, activation='relu', 
-                    kernel_regularizer=tf.keras.regularizers.l2(0.01),
-                    kernel_initializer='he_normal'),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
+        
+        # Second convolutional block
+        layers.Conv2D(64, (3, 3), activation='relu', padding='same'),
+        layers.BatchNormalization(),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
+        
+        # Third convolutional block
+        layers.Conv2D(128, (3, 3), activation='relu', padding='same'),
+        layers.BatchNormalization(),
+        layers.MaxPooling2D((2, 2)),
+        layers.Dropout(0.25),
+        
+        # Dense layers
+        layers.Flatten(),
+        layers.Dense(256, activation='relu'),
         layers.BatchNormalization(),
         layers.Dropout(0.5),
-        layers.Dense(128, activation='relu',
-                    kernel_regularizer=tf.keras.regularizers.l2(0.01),
-                    kernel_initializer='he_normal'),
-        layers.BatchNormalization(),
-        layers.Dropout(0.3),
-        layers.Dense(num_classes, activation='softmax',
-                    kernel_initializer='he_normal')
+        layers.Dense(num_classes, activation='softmax')
     ])
     
-    # Use a custom learning rate schedule
-    initial_learning_rate = 0.001
-    decay_steps = 1000
-    decay_rate = 0.9
-    learning_rate_schedule = tf.keras.optimizers.schedules.ExponentialDecay(
-        initial_learning_rate, decay_steps, decay_rate
-    )
-    
-    # Compile with improved optimizer settings
-    optimizer = tf.keras.optimizers.AdamW(
-        learning_rate=learning_rate_schedule,
-        weight_decay=0.001
-    )
-    
+    # Compile model
     model.compile(
-        optimizer=optimizer,
-        loss='sparse_categorical_crossentropy',
+        optimizer=tf.keras.optimizers.Adam(learning_rate=1e-4),
+        loss='categorical_crossentropy',
         metrics=['accuracy']
     )
     
     return model
 
-def train_model(train_images, train_labels, val_images, val_labels, model_dir="../models", num_classes=None):
+def save_model(model, save_path):
     """
-    تدريب النموذج مع تحسينات متقدمة
+    حفظ النموذج مع التكوين
     """
-    if num_classes is None:
-        num_classes = len(np.unique(train_labels))
+    try:
+        # Save model architecture
+        model_json = model.to_json()
+        with open(save_path.replace('.h5', '_architecture.json'), 'w') as f:
+            f.write(model_json)
+            
+        # Save weights
+        model.save_weights(save_path.replace('.h5', '_weights.h5'))
         
-    print(f"\nTraining model with {num_classes} classes...")
-    print(f"Training samples: {len(train_images)}")
-    print(f"Validation samples: {len(val_images)}")
-
-    # Data augmentation layer with more aggressive transformations
-    data_augmentation = tf.keras.Sequential([
-        layers.RandomFlip("horizontal_and_vertical"),
-        layers.RandomRotation(0.2),
-        layers.RandomZoom(0.2),
-        layers.RandomTranslation(0.1, 0.1),
-        layers.RandomContrast(0.2),
-        layers.RandomBrightness(0.2),
-    ])
-
-    # Create and compile the model
-    model = create_model(num_classes)
-    
-    # Calculate class weights for imbalanced dataset
-    class_weights = compute_class_weight(
-        class_weight='balanced',
-        classes=np.unique(train_labels),
-        y=train_labels
-    )
-    class_weight_dict = dict(enumerate(class_weights))
-    
-    # Convert images to float32 and normalize
-    train_images = train_images.astype('float32') / 255.0
-    val_images = val_images.astype('float32') / 255.0
-    
-    # Add channel dimension if needed
-    if len(train_images.shape) == 3:
-        train_images = np.expand_dims(train_images, axis=-1)
-        val_images = np.expand_dims(val_images, axis=-1)
-    
-    # Create tf.data.Dataset objects with larger buffer size
-    train_dataset = tf.data.Dataset.from_tensor_slices((train_images, train_labels))
-    train_dataset = train_dataset.shuffle(buffer_size=10000).batch(16)
-    train_dataset = train_dataset.map(
-        lambda x, y: (data_augmentation(x, training=True), y),
-        num_parallel_calls=tf.data.AUTOTUNE
-    )
-    train_dataset = train_dataset.prefetch(tf.data.AUTOTUNE)
-    
-    val_dataset = tf.data.Dataset.from_tensor_slices((val_images, val_labels))
-    val_dataset = val_dataset.batch(16).prefetch(tf.data.AUTOTUNE)
-    
-    # Training callbacks with better configuration
-    callbacks = [
-        tf.keras.callbacks.ModelCheckpoint(
-            filepath=os.path.join(model_dir, 'best_model.h5'),
-            save_best_only=True,
-            monitor='val_accuracy',
-            mode='max',
-            verbose=1
-        ),
-        tf.keras.callbacks.EarlyStopping(
-            monitor='val_accuracy',
-            patience=15,
-            restore_best_weights=True,
-            verbose=1
-        ),
-        tf.keras.callbacks.ReduceLROnPlateau(
-            monitor='val_loss',
-            factor=0.2,
-            patience=7,
-            min_lr=1e-6,
-            verbose=1
-        ),
-        tf.keras.callbacks.TensorBoard(
-            log_dir=os.path.join(model_dir, 'logs'),
-            histogram_freq=1
+        # Save full model
+        tf.keras.models.save_model(
+            model,
+            save_path,
+            overwrite=True,
+            include_optimizer=True,
+            save_format='h5',
+            save_traces=False
         )
-    ]
-    
-    # Train the model with cosine annealing
-    initial_epoch = 0
-    epochs_per_cycle = 50
-    total_epochs = 200
-    
-    print("\nStarting training with cosine annealing...")
-    history = model.fit(
-        train_dataset,
-        validation_data=val_dataset,
-        epochs=total_epochs,
-        callbacks=callbacks,
-        class_weight=class_weight_dict,
-        verbose=1
-    )
-    
-    # Save the final model and training history
-    model.save(os.path.join(model_dir, 'final_model.h5'))
-    plot_training_history(history)
-    
-    return model, history
-
-def evaluate_model(model, test_images, test_labels, label_encoder):
-    """
-    Evaluate the model on test data
-    
-    Args:
-        model: Trained model
-        test_images: Test images
-        test_labels: Test labels
-        label_encoder: Label encoder used for training
         
-    Returns:
-        tuple: Test loss and accuracy
+        logging.info(f"Model saved successfully to {save_path}")
+        
+    except Exception as e:
+        logging.error(f"Error saving model: {str(e)}")
+        raise
+
+def train_model(train_images, train_labels, val_images, val_labels, model_dir, num_classes):
     """
-    # Reshape test images
-    test_images = test_images.reshape(test_images.shape[0], test_images.shape[1], test_images.shape[2], 1)
+    تدريب النموذج مع حفظ النتائج
+    """
+    try:
+        # Create model
+        model = create_model(num_classes)
+        
+        # Create callbacks
+        callbacks = [
+            tf.keras.callbacks.ModelCheckpoint(
+                filepath=os.path.join(model_dir, 'best_model.h5'),
+                monitor='val_accuracy',
+                mode='max',
+                save_best_only=True,
+                verbose=1
+            ),
+            tf.keras.callbacks.EarlyStopping(
+                monitor='val_loss',
+                patience=10,
+                restore_best_weights=True,
+                verbose=1
+            ),
+            tf.keras.callbacks.ReduceLROnPlateau(
+                monitor='val_loss',
+                factor=0.5,
+                patience=5,
+                min_lr=1e-6,
+                verbose=1
+            ),
+            tf.keras.callbacks.CSVLogger(
+                os.path.join(model_dir, 'training_log.csv'),
+                append=True
+            )
+        ]
+        
+        # Train model
+        logging.info("Starting model training...")
+        logging.info(f"Training model with {len(train_images)} images and {num_classes} classes")
+        
+        history = model.fit(
+            train_images,
+            train_labels,
+            batch_size=32,
+            epochs=100,
+            validation_data=(val_images, val_labels),
+            callbacks=callbacks,
+            verbose=1
+        )
+        
+        # Save final model
+        save_model(model, os.path.join(model_dir, 'final_model.h5'))
+        
+        return model, history
+        
+    except Exception as e:
+        logging.error(f"An error occurred during training: {str(e)}")
+        raise
+
+def evaluate_model(model, test_images, test_labels, label_mapping):
+    """
+    تقييم النموذج مع مقاييس متقدمة وتحليل
+    """
+    # Convert test labels to categorical
+    test_labels_cat = tf.keras.utils.to_categorical(test_labels, len(label_mapping))
     
     # Get predictions
     predictions = model.predict(test_images)
-    predicted_classes = np.argmax(predictions, axis=1)
+    pred_labels = np.argmax(predictions, axis=1)
+    true_labels = np.argmax(test_labels_cat, axis=1)
     
-    # Evaluate model
-    test_loss, test_accuracy = model.evaluate(test_images, test_labels)
+    # Calculate metrics
+    accuracy = accuracy_score(true_labels, pred_labels)
+    report = classification_report(true_labels, pred_labels, output_dict=True)
+    conf_matrix = confusion_matrix(true_labels, pred_labels)
     
-    print("\nClassification Report:")
-    print(classification_report(test_labels, predicted_classes,
-                              target_names=[str(i) for i in range(len(label_encoder.classes_))]))
+    # Plot confusion matrix
+    plt.figure(figsize=(12, 8))
+    sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues')
+    plt.title('Confusion Matrix')
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.tight_layout()
+    plt.savefig('models/confusion_matrix.png')
+    plt.close()
     
-    return test_loss, test_accuracy
+    # Save metrics
+    metrics = {
+        'accuracy': float(accuracy),
+        'classification_report': report
+    }
+    
+    with open('models/evaluation_metrics.json', 'w') as f:
+        json.dump(metrics, f, indent=4)
+        
+    return metrics
 
 def plot_training_history(history):
     """
-    Plot training history
-    
-    Args:
-        history: Training history
+    رسم تاريخ التدريب مع تحليلات متقدمة
     """
-    plt.figure(figsize=(12, 4))
+    # Create figure with subplots
+    fig = plt.figure(figsize=(15, 10))
     
-    # Plot training & validation accuracy values
-    plt.subplot(1, 2, 1)
-    plt.plot(history.history['accuracy'])
-    plt.plot(history.history['val_accuracy'])
-    plt.title('Model accuracy')
+    # Plot training & validation accuracy
+    plt.subplot(2, 1, 1)
+    plt.plot(history.history['accuracy'], label='Training Accuracy')
+    plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+    plt.title('Model Accuracy')
+    plt.xlabel('Epoch')
     plt.ylabel('Accuracy')
-    plt.xlabel('Epoch')
-    plt.legend(['Train', 'Validation'], loc='upper left')
+    plt.legend(loc='lower right')
+    plt.grid(True)
     
-    # Plot training & validation loss values
-    plt.subplot(1, 2, 2)
-    plt.plot(history.history['loss'])
-    plt.plot(history.history['val_loss'])
-    plt.title('Model loss')
-    plt.ylabel('Loss')
+    # Plot training & validation loss
+    plt.subplot(2, 1, 2)
+    plt.plot(history.history['loss'], label='Training Loss')
+    plt.plot(history.history['val_loss'], label='Validation Loss')
+    plt.title('Model Loss')
     plt.xlabel('Epoch')
-    plt.legend(['Train', 'Validation'], loc='upper left')
+    plt.ylabel('Loss')
+    plt.legend(loc='upper right')
+    plt.grid(True)
     
     plt.tight_layout()
-    
-    # Create the models directory if it doesn't exist
-    model_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'models')
-    os.makedirs(model_dir, exist_ok=True)
-    
-    # Save the plot
-    plt.savefig(os.path.join(model_dir, 'training_plots.png'))
+    plt.savefig('models/training_history.png')
     plt.close()
-
-class ThamudicModel(nn.Module):
-    def __init__(self, num_classes=32):
-        super(ThamudicModel, self).__init__()
-        self.features = nn.Sequential(
-            nn.Conv2d(1, 32, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(32, 64, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            nn.Conv2d(64, 128, kernel_size=3, padding=1),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=2, stride=2)
-        )
-        self.classifier = nn.Sequential(
-            nn.Linear(128 * 16 * 16, 512),
-            nn.ReLU(inplace=True),
-            nn.Dropout(),
-            nn.Linear(512, num_classes)
-        )
-
-    def forward(self, x):
-        x = self.features(x)
-        x = torch.flatten(x, 1)
-        x = self.classifier(x)
-        return x
-
-def create_test_model():
-    # إنشاء نموذج اختبار
-    model = ThamudicModel()
     
-    # التأكد من وجود مجلد النماذج
-    os.makedirs('models', exist_ok=True)
-    
-    # حفظ النموذج
-    torch.save(model.state_dict(), 'models/best_model.pth')
-    
-    # إنشاء ملف تعيين التسميات
-    os.makedirs('models/configs', exist_ok=True)
-    import json
-    label_mapping = {str(i): chr(0x0627 + i) for i in range(32)}  # حروف عربية
-    with open('models/configs/label_mapping.json', 'w', encoding='utf-8') as f:
-        json.dump(label_mapping, f, ensure_ascii=False, indent=2)
+    # Plot learning rate
+    if 'lr' in history.history:
+        plt.figure(figsize=(10, 5))
+        plt.plot(history.history['lr'], label='Learning Rate')
+        plt.title('Learning Rate Schedule')
+        plt.xlabel('Epoch')
+        plt.ylabel('Learning Rate')
+        plt.legend()
+        plt.grid(True)
+        plt.yscale('log')
+        plt.tight_layout()
+        plt.savefig('models/learning_rate.png')
+        plt.close()
 
 if __name__ == "__main__":
     # تحميل البيانات
@@ -298,6 +238,7 @@ if __name__ == "__main__":
     print(f"Model will be saved to: {model_dir}")
     
     # تحميل البيانات وتقسيمها
+    from src.data.data_pipeline import load_data, split_data
     images, labels, label_encoder = load_data(data_dir, mapping_path)
     x_train, x_test, x_val, y_train, y_test, y_val = split_data(images, labels)
     
@@ -305,4 +246,21 @@ if __name__ == "__main__":
     train_model(x_train, y_train, x_val, y_val, model_dir=model_dir, num_classes=len(label_encoder.classes_))
 
     # إنشاء نموذج اختبار
+    def create_test_model():
+        # إنشاء نموذج اختبار
+        model = create_model(num_classes=32)
+        
+        # التأكد من وجود مجلد النماذج
+        os.makedirs('models', exist_ok=True)
+        
+        # حفظ النموذج
+        save_model(model, 'models/best_model.h5')
+        
+        # إنشاء ملف تعيين التسميات
+        os.makedirs('models/configs', exist_ok=True)
+        import json
+        label_mapping = {str(i): chr(0x0627 + i) for i in range(32)}  # حروف عربية
+        with open('models/configs/label_mapping.json', 'w', encoding='utf-8') as f:
+            json.dump(label_mapping, f, ensure_ascii=False, indent=2)
+
     create_test_model()

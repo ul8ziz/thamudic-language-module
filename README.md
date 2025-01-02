@@ -1,134 +1,138 @@
-# Thamudic OCR System
+# نظام التعرف على النصوص الثمودية
+# Thamudic Text Recognition System
 
-## Overview
-The Thamudic OCR System is an advanced deep learning application designed for the accurate recognition of ancient Thamudic inscriptions. It leverages cutting-edge computer vision and neural network methodologies to deliver high-performance character recognition.
+## نظرة عامة | Overview
 
-## Key Features
-- **Accurate Character Recognition**: Employs state-of-the-art models for precise identification of Thamudic characters.
-- **Advanced Image Preprocessing**: Utilizes sophisticated techniques to enhance image quality and improve recognition accuracy.
-- **Real-Time Processing**: Capable of processing images in real-time, making it suitable for dynamic applications.
-- **Comprehensive Analysis and Visualization**: Provides detailed insights and visual representations of recognition results.
-- **Support for Full Texts**: Handles both individual character recognition and complete text analysis.
+نظام متقدم للتعرف على النصوص الثمودية وترجمتها إلى العربية باستخدام تقنيات التعلم العميق والرؤية الحاسوبية.
 
-## System Requirements
+An advanced system for recognizing Thamudic texts and translating them to Arabic using deep learning and computer vision techniques.
 
-### Software Requirements
-- **Python**: Version 3.10
-- **CUDA Toolkit**: Version 11.2 or higher for GPU acceleration
-- **Operating System**: Compatible with Windows, Linux, and macOS
+## المميزات | Features
 
-### Core Dependencies
-Install the necessary libraries using:
+### 🔍 التعرف على النصوص | Text Recognition
+- نموذج عميق مبني على EfficientNetB0 مع تحسينات متقدمة
+- دعم للتعرف على 32 حرفاً ثمودياً
+- معالجة متقدمة للصور مع تقنيات تحسين متعددة
+- تحليل الثقة في التنبؤات مع إحصاءات مفصلة
+
+### 🚀 الأداء | Performance
+- تحسين النموذج باستخدام TensorRT للاستدلال السريع
+- دعم معالجة الدفعات للكفاءة العالية
+- استخدام الدقة المختلطة لتحسين الأداء
+- تحسين استخدام GPU
+
+### 📊 التحليل والتقارير | Analysis & Reporting
+- تقارير تدريب مفصلة مع رسوم بيانية متقدمة
+- تحليل شامل للتنبؤات وثقة النموذج
+- تتبع الأداء عبر الزمن
+- تصدير النتائج بتنسيقات متعددة
+
+## المتطلبات | Requirements
+
 ```bash
-pip install -r requirements.txt
-```
-Key libraries include:
-- TensorFlow 2.6+
-- OpenCV 4.5+
-- NumPy 1.19+
-- scikit-learn 0.24+
-- Albumentations 1.1+
-
-## Project Structure
-```plaintext
-thamudic_ocr/
-├── datasets/                    # Dataset files
-│   ├── raw_images/             # Original images
-│   ├── processed_images/       # Preprocessed images
-│   └── metadata/               # Metadata files
-│
-├── models/                     # Model files
-│   ├── checkpoints/           # Model checkpoints
-│   ├── final/                 # Final models
-│   └── configs/               # Configuration files
-│
-├── src/                       # Source code
-│   ├── core/                 # Core modules
-│   ├── data/                 # Data processing
-│   ├── evaluation/           # Evaluation tools
-│   ├── utils/               # Utility functions
-│   └── interface/           # User interfaces
-│
-├── tests/                     # Tests
-├── docs/                      # Documentation
-├── requirements.txt          # Dependencies
-└── README.md                # Documentation
+tensorflow>=2.8.0
+opencv-python>=4.5.0
+numpy>=1.19.0
+scikit-learn>=0.24.0
+albumentations>=1.0.0
+matplotlib>=3.3.0
+seaborn>=0.11.0
 ```
 
-## Installation Guide
+## التثبيت | Installation
 
-### 1. Clone the Repository
 ```bash
-git clone https://github.com/ul8ziz/thamudic-ocr.git
-cd thamudic-ocr
-```
-
-### 2. Create a Virtual Environment
-```bash
-# Windows
-python -m venv .thamudic_env
-.\thamudic_env\Scripts\Activate.ps1
-
-# Linux/macOS
-python3 -m venv .thamudic_env
-source .thamudic_env/bin/activate
-```
-
-### 3. Install Dependencies
-```bash
+git clone https://github.com/yourusername/thamudic-language-module.git
+cd thamudic-language-module
 pip install -r requirements.txt
 ```
 
-## Usage Guide
+## الاستخدام | Usage
 
-### 1. Data Preparation
-Prepare and organize images using:
-```bash
-python src/data/dataset_manager.py --input_dir datasets/raw_images --output_dir datasets/processed_images
+### تدريب النموذج | Training the Model
+
+```python
+from src.core.model_trainer import train_model
+from src.data.data_pipeline import load_data
+
+# Load and preprocess data
+train_images, train_labels, val_images, val_labels = load_data()
+
+# Train model with advanced configuration
+model, history = train_model(
+    train_images, 
+    train_labels,
+    val_images,
+    val_labels,
+    model_dir="models",
+    num_classes=32
+)
 ```
 
-### 2. Model Training
-Initiate the training process to develop a robust model capable of recognizing Thamudic inscriptions. This step involves configuring the model parameters and training it on the prepared dataset. Execute the following command to start training:
+### استخدام النموذج للتنبؤ | Using the Model for Inference
 
-```bash
-python src/core/model_trainer.py --config models/configs/training_config.json
+```python
+from src.core.inference_engine import ThamudicInferenceEngine
+
+# Initialize inference engine with advanced configuration
+engine = ThamudicInferenceEngine(
+    model_path="models/best_model.h5",
+    label_encoder_path="models/label_encoder.pkl",
+    config={
+        'confidence_threshold': 0.7,
+        'top_k': 3,
+        'use_gpu': True,
+        'batch_size': 16
+    }
+)
+
+# Single image prediction
+result = engine.predict_single("path/to/image.jpg")
+print(f"Top prediction: {result['top_predictions'][0]['label']}")
+print(f"Confidence: {result['top_predictions'][0]['confidence']:.2f}")
+
+# Batch prediction
+image_paths = ["image1.jpg", "image2.jpg", "image3.jpg"]
+results = engine.predict_batch(image_paths)
+
+# Analyze predictions
+analysis = engine.analyze_predictions(results)
+print(f"Mean confidence: {analysis['confidence_stats']['mean']:.2f}")
 ```
 
-#### Prerequisites:
-- Ensure that your data is properly prepared and located in the `datasets/processed_images` directory.
-- Review and adjust the `training_config.json` file in `models/configs/` to fit your specific training requirements, such as batch size, learning rate, and number of epochs.
+## الهيكل | Structure
 
-#### Expected Outcome:
-- The model will be trained using the specified configurations, and checkpoints will be saved in the `models/checkpoints/` directory for later evaluation or further training.
-
-#### Error Handling:
-- If you encounter memory errors, consider reducing the batch size or using a machine with more GPU memory.
-- For convergence issues, experiment with different learning rates or data augmentation techniques.
-- Ensure that all dependencies are installed and compatible with your system configuration.
-
-### 3. Model Evaluation
-Evaluate the model's performance:
-```bash
-python src/evaluation/model_evaluator.py --model_path models/final/best_model.h5
+```
+thamudic-language-module/
+├── data/
+│   ├── letters/              # صور الحروف الثمودية
+│   └── letter_mapping.json   # تعيين الحروف
+├── models/                   # النماذج المدربة
+├── src/
+│   ├── core/
+│   │   ├── model_trainer.py  # تدريب النموذج
+│   │   └── inference_engine.py # محرك الاستدلال
+│   └── data/
+│       └── data_pipeline.py  # معالجة البيانات
+└── README.md
 ```
 
-### 4. Using the GUI
-Launch the graphical interface:
-```bash
-python src/interface/thamudic_interface.py
-```
+## المساهمة | Contributing
 
-### 5. Making Predictions
-Recognize text in an image:
-```bash
-python src/core/inference_engine.py --image path/to/image.png
-```
+نرحب بمساهماتكم! يرجى اتباع هذه الخطوات:
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-## Contributing
-We welcome contributions in model improvements, dataset expansion, and documentation enhancements. Please refer to our [contributing guidelines](https://github.com/ul8ziz/thamudic-ocr/blob/main/CONTRIBUTING.md) for more information.
+## الترخيص | License
 
-## Support and Contact
-For technical issues, please create an [issue](https://github.com/ul8ziz/thamudic-ocr/issues). For contributions, submit a [pull request](https://github.com/ul8ziz/thamudic-ocr/pulls). For questions, check our [discussions](https://github.com/ul8ziz/thamudic-ocr/discussions).
+هذا المشروع مرخص تحت رخصة MIT - انظر ملف [LICENSE](LICENSE) للتفاصيل.
 
-## License
-This project is licensed under the MIT License. See the [LICENSE](https://github.com/ul8ziz/thamudic-ocr/blob/main/LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## الاتصال | Contact
+
+- البريد الإلكتروني | Email: your.email@example.com
+- تويتر | Twitter: [@yourusername](https://twitter.com/yourusername)

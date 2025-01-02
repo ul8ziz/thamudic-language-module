@@ -1,63 +1,91 @@
 import os
+import logging
+import numpy as np
 import tensorflow as tf
-from src.data.data_pipeline import load_data, split_data
-from src.core.model_trainer import train_model
-import json
+from src.core.model_trainer import create_model, save_model
+from src.core.data_loader import load_and_preprocess_data
+from src.utils.visualization import plot_training_history
 
 def main():
-    # Set memory growth for GPU
-    physical_devices = tf.config.list_physical_devices('GPU')
     try:
-        for device in physical_devices:
-            tf.config.experimental.set_memory_growth(device, True)
-    except:
-        print("No GPU devices found. Using CPU.")
+        # Set up logging
+        logging.basicConfig(
+            level=logging.INFO,
+            format='%(asctime)s - %(levelname)s - %(message)s'
+        )
+        
+        # Set paths
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        data_dir = os.path.join(base_dir, 'data', 'letters', 'thamudic_letters')
+        model_dir = os.path.join(base_dir, 'models')
+        mapping_file = os.path.join(base_dir, 'data', 'letters', 'letter_mapping.json')
+        
+        # Create model directory if it doesn't exist
+        os.makedirs(model_dir, exist_ok=True)
+        
+        # Load and preprocess data
+        (train_images, train_labels), (val_images, val_labels), num_classes = load_and_preprocess_data(
+            data_dir,
+            mapping_file
+        )
+        
+        # Create model
+        model = create_model(num_classes)
+        
+        # Create callbacks
+        callbacks = [
+            tf.keras.callbacks.ModelCheckpoint(
+                filepath=os.path.join(model_dir, 'best_model_weights.h5'),
+                monitor='val_accuracy',
+                mode='max',
+                save_best_only=True,
+                save_weights_only=True,
+                verbose=1
+            ),
+            tf.keras.callbacks.EarlyStopping(
+                monitor='val_loss',
+                patience=10,
+                restore_best_weights=True,
+                verbose=1
+            ),
+            tf.keras.callbacks.ReduceLROnPlateau(
+                monitor='val_loss',
+                factor=0.5,
+                patience=5,
+                min_lr=1e-6,
+                verbose=1
+            ),
+            tf.keras.callbacks.CSVLogger(
+                os.path.join(model_dir, 'training_log.csv'),
+                append=True
+            )
+        ]
+        
+        # Train the model
+        logging.info("\nStarting model training...")
+        logging.info(f"Training model with {len(train_images)} images and {num_classes} classes")
+        
+        history = model.fit(
+            train_images,
+            train_labels,
+            batch_size=32,
+            epochs=100,
+            validation_data=(val_images, val_labels),
+            callbacks=callbacks,
+            verbose=1
+        )
+        
+        # Save best model
+        save_model(model, os.path.join(model_dir, 'best_model.h5'))
+        
+        # Plot training history
+        plot_training_history(history)
+        
+        logging.info("Training completed successfully!")
+        
+    except Exception as e:
+        logging.error(f"An error occurred: {str(e)}")
+        raise
 
-    # Configure paths
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    data_dir = os.path.join(base_dir, 'data', 'letters', 'thamudic_letters')
-    models_dir = os.path.join(base_dir, 'models')
-    label_mapping_file = os.path.join(base_dir, 'data', 'letters', 'letter_mapping.json')
-
-    # Create directories if they don't exist
-    os.makedirs(models_dir, exist_ok=True)
-
-    print("Loading data...")
-    images, labels, label_names = load_data(
-        data_dir=data_dir,
-        label_mapping_file=label_mapping_file
-    )
-
-    print("\nSplitting data...")
-    train_images, val_images, test_images, train_labels, val_labels, test_labels = split_data(
-        images, labels, test_size=0.15, val_size=0.15
-    )
-
-    print("\nTraining model...")
-    model, history = train_model(
-        train_images=train_images,
-        train_labels=train_labels,
-        val_images=val_images,
-        val_labels=val_labels,
-        model_dir=models_dir,
-        num_classes=len(set(labels))
-    )
-
-    # Save training history
-    history_file = os.path.join(models_dir, 'training_history.json')
-    with open(history_file, 'w') as f:
-        history_dict = {
-            'accuracy': [float(x) for x in history.history['accuracy']],
-            'val_accuracy': [float(x) for x in history.history['val_accuracy']],
-            'loss': [float(x) for x in history.history['loss']],
-            'val_loss': [float(x) for x in history.history['val_loss']]
-        }
-        json.dump(history_dict, f, indent=4)
-
-    print("\nEvaluating model on test set...")
-    test_loss, test_accuracy = model.evaluate(test_images, test_labels, verbose=1)
-    print(f"\nTest accuracy: {test_accuracy:.4f}")
-    print(f"Test loss: {test_loss:.4f}")
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
