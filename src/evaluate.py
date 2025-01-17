@@ -1,117 +1,167 @@
+import os
+import json
 import torch
+from torch.utils.data import DataLoader
 import numpy as np
-from sklearn.metrics import confusion_matrix, classification_report
+from sklearn.metrics import classification_report, confusion_matrix
 import seaborn as sns
 import matplotlib.pyplot as plt
-from pathlib import Path
-import yaml
-import json
+from data import ThamudicDataset
+from model import create_model
+import logging
+import argparse
 
-from data_preprocessing import ThamudicPreprocessor
-from model import ThamudicRecognitionModel
-
-class ModelEvaluator:
-    def __init__(self, model_path: str, config_path: str, char_mapping_path: str):
-        # Load configurations
-        with open(config_path, 'r') as f:
-            self.config = yaml.safe_load(f)
-        
-        with open(char_mapping_path, 'r', encoding='utf-8') as f:
-            self.char_mapping = json.load(f)
-        
-        # Initialize model
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        self.model = ThamudicRecognitionModel(len(self.char_mapping))
-        self.model.load_state_dict(torch.load(model_path, map_location=self.device))
-        self.model.to(self.device)
-        self.model.eval()
-        
-        # Initialize preprocessor
-        self.preprocessor = ThamudicPreprocessor(
-            image_size=tuple(self.config['model']['image_size'])
-        )
-        
-        # Reverse char mapping for evaluation
-        self.idx_to_char = {v: k for k, v in self.char_mapping.items()}
+def load_model_and_data(args):
+    """
+    تحميل النموذج والبيانات
     
-    def evaluate_model(self, test_loader):
-        """Evaluate model performance on test set."""
-        all_preds = []
-        all_labels = []
+    Args:
+        args: معاملات البرنامج
         
-        with torch.no_grad():
-            for images, labels in test_loader:
-                images = images.to(self.device)
-                outputs = self.model(images)
-                _, predicted = torch.max(outputs.data, 1)
-                
-                all_preds.extend(predicted.cpu().numpy())
-                all_labels.extend(labels.numpy())
-        
-        return self.generate_metrics(all_labels, all_preds)
-    
-    def generate_metrics(self, true_labels, predicted_labels):
-        """Generate evaluation metrics."""
-        # Calculate confusion matrix
-        conf_matrix = confusion_matrix(true_labels, predicted_labels)
-        
-        # Generate classification report
-        class_report = classification_report(
-            true_labels, 
-            predicted_labels,
-            target_names=[self.idx_to_char[i] for i in range(len(self.char_mapping))],
-            output_dict=True
-        )
-        
-        # Plot confusion matrix
-        plt.figure(figsize=(15, 15))
-        sns.heatmap(
-            conf_matrix, 
-            annot=True, 
-            fmt='d',
-            xticklabels=[self.idx_to_char[i] for i in range(len(self.char_mapping))],
-            yticklabels=[self.idx_to_char[i] for i in range(len(self.char_mapping))]
-        )
-        plt.title('Confusion Matrix')
-        plt.xlabel('Predicted')
-        plt.ylabel('True')
-        
-        # Save plot
-        output_dir = Path('evaluation_results')
-        output_dir.mkdir(exist_ok=True)
-        plt.savefig(output_dir / 'confusion_matrix.png')
-        
-        return {
-            'confusion_matrix': conf_matrix,
-            'classification_report': class_report,
-            'accuracy': class_report['accuracy']
+    Returns:
+        tuple: (النموذج، محمل البيانات، معلومات الفئات)
+    """
+    # تحميل معلومات الفئات
+    try:
+        dataset = ThamudicDataset(args.data_dir)
+        class_info = {
+            'num_classes': len(dataset.class_to_idx),
+            'class_to_idx': dataset.class_to_idx
         }
+        dataloader = DataLoader(
+            dataset,
+            batch_size=args.batch_size,
+            shuffle=False,
+            num_workers=4,
+            pin_memory=True
+        )
+    except Exception as e:
+        logging.error(f"خطأ في تحميل البيانات: {e}")
+        return None, None, None
     
-    def evaluate_single_image(self, image_path: str):
-        """Evaluate model performance on a single image."""
-        # Preprocess image
-        image = self.preprocessor.preprocess_image(image_path)
+    # تحميل النموذج
+    model = create_model(num_classes=class_info['num_classes'])
+    try:
+        state_dict = torch.load(args.model, map_location=args.device)
+        model.load_state_dict(state_dict)
+        model.to(args.device)
+        model.eval()
+    except Exception as e:
+        logging.error(f"خطأ في تحميل النموذج: {e}")
+        return None, None, None
+    
+    return model, dataloader, class_info
+
+def evaluate_model(model, dataloader, device):
+    """
+    تقييم النموذج
+    
+    Args:
+        model: النموذج المدرب
+        dataloader: محمل البيانات
+        device: الجهاز المستخدم
         
-        # Convert to tensor
-        image_tensor = torch.from_numpy(image).permute(2, 0, 1).float().unsqueeze(0)
-        image_tensor = image_tensor.to(self.device)
-        
-        # Get prediction
-        with torch.no_grad():
-            output = self.model(image_tensor)
-            _, predicted = torch.max(output.data, 1)
+    Returns:
+        tuple: (التنبؤات، التصنيفات الحقيقية)
+    """
+    all_preds = []
+    all_labels = []
+    
+    with torch.no_grad():
+        for images, labels in dataloader:
+            images = images.to(device)
+            outputs = model(images)
+            _, preds = torch.max(outputs, 1)
             
-        predicted_char = self.idx_to_char[predicted.item()]
-        
-        # Get confidence scores
-        probabilities = torch.nn.functional.softmax(output, dim=1)[0]
-        confidence = probabilities[predicted].item()
-        
-        return {
-            'predicted_char': predicted_char,
-            'confidence': confidence,
-            'probabilities': {
-                self.idx_to_char[i]: prob.item()
-                for i, prob in enumerate(probabilities)
-            }
-        }
+            all_preds.extend(preds.cpu().numpy())
+            all_labels.extend(labels.numpy())
+    
+    return np.array(all_preds), np.array(all_labels)
+
+def plot_confusion_matrix(y_true, y_pred, class_names, output_dir):
+    """
+    رسم مصفوفة الارتباك
+    
+    Args:
+        y_true: التصنيفات الحقيقية
+        y_pred: التنبؤات
+        class_names: أسماء الفئات
+        output_dir: مجلد الإخراج
+    """
+    cm = confusion_matrix(y_true, y_pred)
+    plt.figure(figsize=(15, 15))
+    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
+                xticklabels=class_names,
+                yticklabels=class_names)
+    plt.title('مصفوفة الارتباك')
+    plt.xlabel('التنبؤات')
+    plt.ylabel('القيم الحقيقية')
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, 'confusion_matrix.png'))
+    plt.close()
+
+def save_classification_report(y_true, y_pred, class_names, output_dir):
+    """
+    حفظ تقرير التصنيف
+    
+    Args:
+        y_true: التصنيفات الحقيقية
+        y_pred: التنبؤات
+        class_names: أسماء الفئات
+        output_dir: مجلد الإخراج
+    """
+    report = classification_report(
+        y_true, y_pred,
+        target_names=class_names,
+        digits=3
+    )
+    
+    with open(os.path.join(output_dir, 'classification_report.txt'), 'w', encoding='utf-8') as f:
+        f.write(report)
+
+def main():
+    """
+    الدالة الرئيسية
+    """
+    parser = argparse.ArgumentParser(description='تقييم نموذج التعرف على الحروف الثمودية')
+    parser.add_argument('--model', default='models/best_model.pth', help='مسار النموذج المدرب')
+    parser.add_argument('--data_dir', required=True, help='مجلد بيانات الاختبار')
+    parser.add_argument('--output_dir', default='D:/ul8ziz/GitHub/thamudic-language-module/evaluation', help='مجلد حفظ نتائج التقييم')
+    parser.add_argument('--batch_size', type=int, default=32, help='حجم الدفعة')
+    args = parser.parse_args()
+    
+    # إعداد التسجيل
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(levelname)s - %(message)s'
+    )
+    
+    # تحديد الجهاز
+    args.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(f'Using device: {args.device}')
+    
+    # إنشاء مجلد الإخراج
+    os.makedirs(args.output_dir, exist_ok=True)
+    
+    # تحميل النموذج والبيانات
+    model, dataloader, class_info = load_model_and_data(args)
+    if None in (model, dataloader, class_info):
+        return
+    
+    # تقييم النموذج
+    predictions, true_labels = evaluate_model(model, dataloader, args.device)
+    
+    # تحويل الفهارس إلى أسماء الفئات
+    idx_to_class = {v: k for k, v in class_info['class_to_idx'].items()}
+    class_names = [idx_to_class[i] for i in range(len(idx_to_class))]
+    
+    # رسم مصفوفة الارتباك
+    plot_confusion_matrix(true_labels, predictions, class_names, args.output_dir)
+    
+    # حفظ تقرير التصنيف
+    save_classification_report(true_labels, predictions, class_names, args.output_dir)
+    
+    print(f"\nتم حفظ نتائج التقييم في المجلد: {args.output_dir}")
+
+if __name__ == "__main__":
+    main()

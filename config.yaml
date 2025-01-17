@@ -1,0 +1,50 @@
+paths:
+  data_dir: 'data/letters/processed_letters'
+  mapping_file: 'data/char_mapping.json'
+  best_model: 'models/best_model.pth'
+  logs: 'logs/training.log'
+  checkpoints: 'models/checkpoints'
+  model_weights: 'models/thamudic_model.pth'
+  learning_curves: 'models/learning_curves.png'
+
+data:
+  data_dir: 'data/letters/processed_letters'
+  mapping_file: 'data/char_mapping.json'
+  train_path: 'data/letters/processed_letters/train'
+  val_path: 'data/letters/processed_letters/val'
+  batch_size: 32
+  num_workers: 4
+  augmentation:
+    probability: 0.5
+    rotation_range: 20
+    width_shift_range: 0.2
+    height_shift_range: 0.2
+    brightness_range: [0.8, 1.2]
+    zoom_range: [0.8, 1.2]
+
+model:
+  type: 'resnet'
+  image_size: [224, 224]
+  input_channels: 3
+  num_classes: 29
+  pretrained: true
+  transfer_learning:
+    freeze_backbone: true
+    unfreeze_layers: 2
+
+training:
+  batch_size: 32
+  epochs: 100
+  learning_rate: 0.001
+  weight_decay: 0.01
+  early_stopping_patience: 10
+  label_smoothing: 0.1
+  optimizer: 'adam'
+  learning_rate_scheduler:
+    type: 'reduce_on_plateau'
+    factor: 0.5
+    patience: 5
+
+logging:
+  log_interval: 10
+  verbose: true

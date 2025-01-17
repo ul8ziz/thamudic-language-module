@@ -1,0 +1,40 @@
+training:
+  epochs: 50
+  batch_size: 64
+  learning_rate: 0.001
+  device: cuda
+  precision: 16
+
+model:
+  name: ThamudicRecognitionModel
+  type: resnet
+  input_size: [1, 224, 224]
+  num_classes: 28
+
+data:
+  data_dir: D:/ul8ziz/GitHub/thamudic-language-module/data/letters/thamudic_letters
+  mapping_file: D:/ul8ziz/GitHub/thamudic-language-module/data/letters/letter_mapping.json
+  augmentation:
+    probability: 0.5
+    techniques:
+      - brightness_contrast
+      - gaussian_noise
+      - horizontal_flip
+      - shift_scale_rotate
+
+logging:
+  log_dir: logs
+  tensorboard: true
+  wandb: false
+
+checkpoints:
+  save_dir: models/checkpoints
+  save_best_only: true
+  save_frequency: 5
+
+evaluation:
+  metrics:
+    - accuracy
+    - precision
+    - recall
+    - f1_score

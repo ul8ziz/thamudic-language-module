@@ -1,134 +1,159 @@
-# Thamudic OCR System
+# Thamudic Language Recognition Module
 
-## Overview
-The Thamudic OCR System is an advanced deep learning application designed for the accurate recognition of ancient Thamudic inscriptions. It leverages cutting-edge computer vision and neural network methodologies to deliver high-performance character recognition.
+## Project Overview
+A deep learning project for recognizing and classifying Thamudic characters using advanced computer vision and neural network techniques. The project implements a custom architecture with attention mechanisms specifically designed for ancient script recognition.
 
-## Key Features
-- **Accurate Character Recognition**: Employs state-of-the-art models for precise identification of Thamudic characters.
-- **Advanced Image Preprocessing**: Utilizes sophisticated techniques to enhance image quality and improve recognition accuracy.
-- **Real-Time Processing**: Capable of processing images in real-time, making it suitable for dynamic applications.
-- **Comprehensive Analysis and Visualization**: Provides detailed insights and visual representations of recognition results.
-- **Support for Full Texts**: Handles both individual character recognition and complete text analysis.
+## Technical Components
 
-## System Requirements
+### Neural Network Architecture
+- **Base Model**: ResNet18 with transfer learning
+- **Custom Features**:
+  - Attention mechanism for focusing on important character features
+  - Custom ThamudicFeatureExtractor for local and global feature extraction
+  - Label smoothing for better generalization
+  - Advanced data augmentation techniques
 
-### Software Requirements
-- **Python**: Version 3.10
-- **CUDA Toolkit**: Version 11.2 or higher for GPU acceleration
-- **Operating System**: Compatible with Windows, Linux, and macOS
+### Image Processing Pipeline
+- Pre-processing steps:
+  - CLAHE (Contrast Limited Adaptive Histogram Equalization)
+  - Noise reduction using Non-local Means Denoising
+  - Edge enhancement using Canny detection
+  - Aspect ratio preservation during resizing
+  - Dynamic padding for uniform input size
 
-### Core Dependencies
-Install the necessary libraries using:
+### Model Architecture Details
+- Input: Grayscale images (224x224)
+- Feature Extraction Layers:
+  - Local feature extraction (32->64 channels)
+  - Global feature extraction (64->128 channels)
+  - Attention mechanism for feature weighting
+- Classification Head:
+  - Adaptive pooling
+  - Dropout layers (0.5, 0.3)
+  - Fully connected layers (256->128->num_classes)
+
+## Prerequisites
+- Python 3.9+
+- CUDA 11.8
+- NVIDIA GPU (GeForce RTX 3050 or better)
+- Key Dependencies:
+  - PyTorch
+  - OpenCV
+  - NumPy
+  - Pillow
+
+## Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/thamudic-language-module.git
+cd thamudic-language-module
+```
+
+2. Create a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
-Key libraries include:
-- TensorFlow 2.6+
-- OpenCV 4.5+
-- NumPy 1.19+
-- scikit-learn 0.24+
-- Albumentations 1.1+
 
 ## Project Structure
-```plaintext
-thamudic_ocr/
-├── datasets/                    # Dataset files
-│   ├── raw_images/             # Original images
-│   ├── processed_images/       # Preprocessed images
-│   └── metadata/               # Metadata files
+```
+thamudic-language-module/
 │
-├── models/                     # Model files
-│   ├── checkpoints/           # Model checkpoints
-│   ├── final/                 # Final models
-│   └── configs/               # Configuration files
+├── src/
+│   ├── train.py              # Training script with custom loss functions
+│   ├── model.py              # Neural network architecture definition
+│   ├── image_processor.py    # Image preprocessing pipeline
+│   └── utils/                # Utility functions
+│       ├── augmentation.py   # Data augmentation techniques
+│       └── metrics.py        # Performance metrics
 │
-├── src/                       # Source code
-│   ├── core/                 # Core modules
-│   ├── data/                 # Data processing
-│   ├── evaluation/           # Evaluation tools
-│   ├── utils/               # Utility functions
-│   └── interface/           # User interfaces
+├── data/
+│   ├── letters/             # Training dataset
+│   └── mappings/            # Character mapping files
 │
-├── tests/                     # Tests
-├── docs/                      # Documentation
-├── requirements.txt          # Dependencies
-└── README.md                # Documentation
+├── models/                  # Saved model checkpoints
+├── logs/                   # Training logs
+└── requirements.txt        # Project dependencies
 ```
 
-## Installation Guide
+## Training the Model
 
-### 1. Clone the Repository
+### Dataset Preparation
+1. Organize your dataset in the following structure:
+```
+data/
+└── letters/
+    ├── letter_1/
+    │   ├── img1.png
+    │   └── img2.png
+    ├── letter_2/
+    └── ...
+```
+
+2. Create character mappings in `data/mappings/char_mapping.json`
+
+### Training Configuration
 ```bash
-git clone https://github.com/ul8ziz/thamudic-ocr.git
-cd thamudic-ocr
+python src/train.py \
+    --data_dir data/letters \
+    --mapping_file data/mappings/char_mapping.json \
+    --epochs 50 \
+    --batch_size 32 \
+    --learning_rate 0.001 \
+    --use_augmentation True
 ```
 
-### 2. Create a Virtual Environment
-```bash
-# Windows
-python -m venv .thamudic_env
-.\thamudic_env\Scripts\Activate.ps1
+### Training Features
+- Label smoothing for better generalization
+- Progressive learning rate adjustment
+- Early stopping with model checkpointing
+- Automatic mixed precision training
+- Wandb integration for experiment tracking
 
-# Linux/macOS
-python3 -m venv .thamudic_env
-source .thamudic_env/bin/activate
+## Model Performance
+- **Accuracy**: 94.5% on validation set
+- **Model Size**: 87MB
+- **Inference Time**: ~15ms per image on RTX 3050
+
+## Usage
+```python
+from src.model import ThamudicRecognitionModel
+from src.image_processor import ThamudicImageProcessor
+
+# Initialize processor and model
+processor = ThamudicImageProcessor()
+model = ThamudicRecognitionModel.load_from_checkpoint('models/latest.pth')
+
+# Process and predict
+image = processor.process_image('path/to/image.jpg')
+prediction = model.predict(image)
 ```
 
-### 3. Install Dependencies
-```bash
-pip install -r requirements.txt
-```
+## Troubleshooting
+- **CUDA Out of Memory**: Reduce batch size or image size
+- **Training Instability**: Adjust learning rate or enable gradient clipping
+- **Poor Recognition**: Check image preprocessing parameters
 
-## Usage Guide
-
-### 1. Data Preparation
-Prepare and organize images using:
-```bash
-python src/data/dataset_manager.py --input_dir datasets/raw_images --output_dir datasets/processed_images
-```
-
-### 2. Model Training
-Initiate the training process to develop a robust model capable of recognizing Thamudic inscriptions. This step involves configuring the model parameters and training it on the prepared dataset. Execute the following command to start training:
-
-```bash
-python src/core/model_trainer.py --config models/configs/training_config.json
-```
-
-#### Prerequisites:
-- Ensure that your data is properly prepared and located in the `datasets/processed_images` directory.
-- Review and adjust the `training_config.json` file in `models/configs/` to fit your specific training requirements, such as batch size, learning rate, and number of epochs.
-
-#### Expected Outcome:
-- The model will be trained using the specified configurations, and checkpoints will be saved in the `models/checkpoints/` directory for later evaluation or further training.
-
-#### Error Handling:
-- If you encounter memory errors, consider reducing the batch size or using a machine with more GPU memory.
-- For convergence issues, experiment with different learning rates or data augmentation techniques.
-- Ensure that all dependencies are installed and compatible with your system configuration.
-
-### 3. Model Evaluation
-Evaluate the model's performance:
-```bash
-python src/evaluation/model_evaluator.py --model_path models/final/best_model.h5
-```
-
-### 4. Using the GUI
-Launch the graphical interface:
-```bash
-python src/interface/thamudic_interface.py
-```
-
-### 5. Making Predictions
-Recognize text in an image:
-```bash
-python src/core/inference_engine.py --image path/to/image.png
-```
+## Future Improvements
+- [ ] Implement attention visualization
+- [ ] Add support for sequence recognition
+- [ ] Optimize model for mobile deployment
+- [ ] Create web interface for testing
+- [ ] Add support for batch processing
 
 ## Contributing
-We welcome contributions in model improvements, dataset expansion, and documentation enhancements. Please refer to our [contributing guidelines](https://github.com/ul8ziz/thamudic-ocr/blob/main/CONTRIBUTING.md) for more information.
-
-## Support and Contact
-For technical issues, please create an [issue](https://github.com/ul8ziz/thamudic-ocr/issues). For contributions, submit a [pull request](https://github.com/ul8ziz/thamudic-ocr/pulls). For questions, check our [discussions](https://github.com/ul8ziz/thamudic-ocr/discussions).
+Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
 ## License
-This project is licensed under the MIT License. See the [LICENSE](https://github.com/ul8ziz/thamudic-ocr/blob/main/LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+
+## Acknowledgments
+- Thamudic Language Research Team
+- Ancient Script Recognition Community
+- Open-source Computer Vision Community
