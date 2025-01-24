@@ -1,50 +1,63 @@
-import tensorflow as tf
-import torch
-import torch.nn as nn
-import numpy as np
-import json
 from pathlib import Path
-import sys
-sys.path.append(str(Path(__file__).parent.parent.parent))
-from src.core.cnn_architecture import ThamudicRecognitionModel
 
-def convert_keras_to_pytorch(keras_model_path: str, output_path: str, num_classes: int):
-    """Convert Keras model to PyTorch format"""
-    # Load Keras model
-    keras_model = tf.keras.models.load_model(keras_model_path)
-    
-    # Create PyTorch model
-    pytorch_model = ThamudicRecognitionModel(num_classes=num_classes)
-    pytorch_model.eval()
-    
-    # Convert weights
-    keras_weights = keras_model.get_weights()
-    
-    # Create state dict for PyTorch model
-    state_dict = {
-        'model_state_dict': pytorch_model.state_dict(),
-    }
-    
-    # Save PyTorch model
-    torch.save(state_dict, output_path)
-    print(f"Model converted and saved to {output_path}")
+# Project paths
+PROJECT_ROOT = Path(__file__).parent.parent
+DATA_DIR = PROJECT_ROOT / "data"
+MODELS_DIR = PROJECT_ROOT / "models"
+LETTERS_DIR = DATA_DIR / "letters"
+PROCESSED_DIR = DATA_DIR / "processed"
 
-def main():
-    # Paths
-    keras_model_path = 'models/best_model.keras'
-    output_path = 'output/models/best_model.pt'
-    label_mapping_path = 'data/letters/letter_mapping.json'
-    
-    # Load label mapping to get number of classes
-    with open(label_mapping_path, 'r', encoding='utf-8') as f:
-        label_mapping = json.load(f)
-    num_classes = len(label_mapping['thamudic_letters'])
-    
-    # Create output directory
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    
-    # Convert model
-    convert_keras_to_pytorch(keras_model_path, output_path, num_classes)
+# Model configuration
+MODEL_CONFIG = {
+    "image_size": 128,
+    "batch_size": 32,
+    "learning_rate": 0.001,
+    "num_epochs": 100,
+    "early_stopping_patience": 10,
+    "validation_split": 0.2,
+}
 
-if __name__ == '__main__':
-    main()
+# Data augmentation configuration
+AUGMENTATION_CONFIG = {
+    "rotation_range": 15,
+    "width_shift_range": 0.1,
+    "height_shift_range": 0.1,
+    "zoom_range": 0.1,
+    "shear_range": 0.1,
+}
+
+# Preprocessing configuration
+PREPROCESSING_CONFIG = {
+    "target_size": (128, 128),
+    "grayscale": True,
+    "normalize": True,
+    "denoise_strength": 10,
+    "contrast_limit": 3.0,
+    "brightness_limit": 0.3,
+}
+
+# Training configuration
+TRAINING_CONFIG = {
+    "optimizer": "adam",
+    "loss": "categorical_crossentropy",
+    "metrics": ["accuracy"],
+    "checkpoint_dir": MODELS_DIR / "checkpoints",
+    "tensorboard_dir": MODELS_DIR / "tensorboard",
+}
+
+# Character segmentation configuration
+SEGMENTATION_CONFIG = {
+    "min_contour_area": 100,
+    "min_aspect_ratio": 0.2,
+    "max_aspect_ratio": 5.0,
+    "padding": 5,
+    "direction": "rtl",  # right-to-left for Arabic/Thamudic
+}
+
+# GUI configuration
+GUI_CONFIG = {
+    "window_title": "Thamudic Script Recognition",
+    "window_size": "800x600",
+    "max_display_size": 400,
+    "theme": "default",
+}
