@@ -3,11 +3,12 @@ import os
 import json
 import torch
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFont
 import albumentations as A
 from thamudic_model import ThamudicRecognitionModel
 import logging
 import cv2
+from PIL import ImageFont
 
 # إعداد التسجيل
 logging.basicConfig(
@@ -55,6 +56,26 @@ def preprocess_image(image):
     # تحويل الصورة إلى مصفوفة numpy
     image_np = np.array(image)
     
+    # تحويل الصورة إلى تدرج رمادي
+    if len(image_np.shape) == 3:
+        image_gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
+    else:
+        image_gray = image_np
+        
+    # تحسين التباين
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    image_enhanced = clahe.apply(image_gray)
+    
+    # تطبيق عتبة تكيفية
+    binary = cv2.adaptiveThreshold(
+        image_enhanced, 255, 
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+        cv2.THRESH_BINARY_INV, 11, 2
+    )
+    
+    # تحويل الصورة الثنائية إلى RGB
+    image_rgb = cv2.cvtColor(binary, cv2.COLOR_GRAY2RGB)
+    
     # تحويلات الصورة
     transform = A.Compose([
         A.Resize(224, 224),
@@ -62,7 +83,7 @@ def preprocess_image(image):
     ])
     
     # تطبيق التحويلات
-    transformed = transform(image=image_np)
+    transformed = transform(image=image_rgb)
     image_tensor = torch.from_numpy(transformed['image']).permute(2, 0, 1).float()
     
     # إضافة بُعد الدفعة
@@ -75,13 +96,27 @@ def detect_letters(image):
     اكتشاف مواقع الحروف في الصورة
     """
     # تحويل الصورة إلى تدرج رمادي
-    gray = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2GRAY)
+    image_np = np.array(image)
+    if len(image_np.shape) == 3:
+        gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
+    else:
+        gray = image_np
     
-    # تطبيق عتبة ثنائية تكيفية
+    # تحسين التباين
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+    enhanced = clahe.apply(gray)
+    
+    # تطبيق عتبة تكيفية
     binary = cv2.adaptiveThreshold(
-        gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+        enhanced, 255, 
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
         cv2.THRESH_BINARY_INV, 11, 2
     )
+    
+    # تطبيق عمليات مورفولوجية
+    kernel = np.ones((3,3), np.uint8)
+    binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+    binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
     
     # البحث عن المكونات المتصلة
     num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary, connectivity=8)
@@ -96,33 +131,91 @@ def detect_letters(image):
         area = stats[i, cv2.CC_STAT_AREA]
         
         # تجاهل المكونات الصغيرة جداً أو الكبيرة جداً
-        if area > 100 and area < (image.size[0] * image.size[1]) / 4:
+        min_area = 100
+        max_area = (image.size[0] * image.size[1]) / 8
+        if min_area < area < max_area:
+            # إضافة هامش حول الحرف
+            margin = 5
+            x = max(0, x - margin)
+            y = max(0, y - margin)
+            w = min(image.size[0] - x, w + 2 * margin)
+            h = min(image.size[1] - y, h + 2 * margin)
             boxes.append((x, y, w, h))
+    
+    # ترتيب الصناديق من اليمين إلى اليسار
+    boxes.sort(key=lambda box: box[0], reverse=True)
     
     return boxes
 
-def draw_boxes(image, boxes, predictions, letters_mapping):
+def map_letter_to_thamudic(letter_name, class_mapping):
     """
-    رسم مربعات حول الحروف المكتشفة مع كتابة التنبؤات
+    Map generic letter names to their corresponding Thamudic character index
     """
-    draw = ImageDraw.Draw(image)
+    # Reverse the class_mapping to get index to letter_name mapping
+    index_to_letter = {v: k for k, v in class_mapping.items()}
     
-    for i, ((x, y, w, h), (thamudic_letter, confidence)) in enumerate(zip(boxes, predictions)):
-        # رسم المربع
-        draw.rectangle(
-            [(x, y), (x + w, y + h)],
-            outline='lime',
-            width=2
-        )
-        
-        # الحصول على الحرف العربي المقابل
-        arabic_letter = letters_mapping.get(thamudic_letter, "غير معروف")
-        
-        # كتابة التنبؤ
-        text = f"letter_{i+1}: {arabic_letter} - {thamudic_letter}"
-        draw.text((x, y-20), text, fill='lime')
+    # Extract the number from the letter name
+    try:
+        index = int(letter_name.split('_')[1]) - 1
+        return index_to_letter.get(index, letter_name)
+    except (IndexError, ValueError):
+        return letter_name
+
+def draw_boxes(image, boxes, predictions, letters_mapping, class_mapping):
+    """
+    Draw bounding boxes around detected letters with predictions
     
-    return image
+    Args:
+        image: Input image
+        boxes: List of bounding boxes
+        predictions: List of predicted classes
+        letters_mapping: Mapping from Thamudic to Arabic letters
+        class_mapping: Mapping from class names to indices
+    """
+    try:
+        # Create a copy of the image
+        result_image = image.copy()
+        draw = ImageDraw.Draw(result_image)
+        
+        # Create reverse mappings
+        reverse_class_mapping = {v: k for k, v in class_mapping.items()}
+        
+        # Font settings
+        font_size = 20
+        try:
+            font = ImageFont.truetype("arial.ttf", font_size)
+        except:
+            font = ImageFont.load_default()
+        
+        # Draw boxes and predictions
+        for box, pred in zip(boxes, predictions):
+            x1, y1, x2, y2 = box
+            
+            # Draw rectangle with green color
+            draw.rectangle([x1, y1, x2, y2], outline='lime', width=2)
+            
+            # Get letter names
+            thamudic_letter = reverse_class_mapping[pred]
+            arabic_letter = letters_mapping.get(thamudic_letter, "?")
+            
+            # Calculate text position
+            text_width = max(x2 - x1, font_size * 3)
+            text_x = x1
+            text_y = y1 - font_size - 5
+            
+            # Draw background rectangle for text
+            draw.rectangle([text_x, text_y, text_x + text_width, text_y + font_size],
+                         fill='white', outline='lime')
+            
+            # Draw text
+            text = f"{arabic_letter} | {thamudic_letter}"
+            draw.text((text_x + 2, text_y), text, fill='black', font=font)
+        
+        return result_image
+        
+    except Exception as e:
+        logging.error(f"Error in draw_boxes: {str(e)}")
+        return image
 
 def main():
     # إعداد الصفحة
@@ -146,14 +239,14 @@ def main():
             margin-bottom: 1rem;
         }
         .stButton>button {
-            width: 100%;
+            width: 50%;
             margin-top: 1rem;
         }
         </style>
     """, unsafe_allow_html=True)
     
     # العنوان
-    st.title("نظام التعرف على النقوش الثمودية")
+    st.title("مودل التعرف على النقوش الثمودية")
     st.markdown("---")
     
     # تحميل النموذج
@@ -175,7 +268,11 @@ def main():
             boxes = detect_letters(original_image)
             
             predictions = []
+            converted_boxes = []  # قائمة جديدة للصناديق المحولة
             for x, y, w, h in boxes:
+                # تحويل تنسيق الصندوق
+                converted_boxes.append((x, y, x+w, y+h))
+                
                 # اقتصاص الحرف
                 letter_image = original_image.crop((x, y, x+w, y+h))
                 
@@ -189,32 +286,13 @@ def main():
                     predicted_idx = torch.argmax(probabilities).item()
                     confidence = probabilities[predicted_idx].item() * 100
                     
-                # البحث عن اسم الحرف
-                predicted_letter = None
-                for letter, idx in class_mapping.items():
-                    if idx == predicted_idx:
-                        predicted_letter = letter
-                        break
-                
-                # إذا لم يتم العثور على الحرف، استخدم علامة استفهام
-                if predicted_letter is None:
-                    predicted_letter = "?"
-                
-                predictions.append((predicted_letter, confidence))
+                predictions.append(predicted_idx)  # تخزين فقط مؤشر التنبؤ
             
-            # عرض الصور في صفين
-            st.subheader("الصور")
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown("**الصورة الأصلية**")
-                st.image(original_image, use_container_width=True)
-            
-            with col2:
+            if predictions:
                 st.markdown("**نتيجة التعرف**")
                 # رسم المربعات والتنبؤات
                 result_image = original_image.copy()
-                result_image = draw_boxes(result_image, boxes, predictions, letters_mapping)
+                result_image = draw_boxes(result_image, converted_boxes, predictions, letters_mapping, class_mapping)
                 st.image(result_image, use_container_width=True)
             
             # إضافة خط فاصل
@@ -225,7 +303,12 @@ def main():
             
             # إنشاء بيانات الجدول
             table_data = []
-            for i, ((x, y, w, h), (thamudic_letter, confidence)) in enumerate(zip(boxes, predictions)):
+            for i, ((x, y, w, h), pred) in enumerate(zip(boxes, predictions)):
+                thamudic_letter = None
+                for letter, idx in class_mapping.items():
+                    if idx == pred:
+                        thamudic_letter = letter
+                        break
                 arabic_letter = letters_mapping.get(thamudic_letter, "غير معروف")
                 table_data.append({
                     "رقم الحرف": f"letter_{i+1}",

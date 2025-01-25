@@ -51,18 +51,27 @@ class DataAnalyzer:
             'imbalance_ratio': float(class_counts.max() / class_counts.min())
         }
         
-        # Plot distribution
+        self.plot_class_distribution()
+        
+        return stats
+    
+    def plot_class_distribution(self):
+        """Plot class distribution"""
         plt.figure(figsize=(12, 6))
-        sns.barplot(x=class_counts.index, y=class_counts.values)
-        plt.title('Class Distribution')
-        plt.xlabel('Class')
+        class_counts = pd.Series(self.dataset.labels).value_counts().sort_index()
+        
+        sns.barplot(x=range(len(class_counts)), y=class_counts)
+        plt.title('Class Distribution in Dataset')
+        plt.xlabel('Character Class')
         plt.ylabel('Number of Samples')
         plt.xticks(rotation=45)
         plt.tight_layout()
-        plt.savefig(self.output_dir / 'class_distribution.png')
+        
+        save_path = self.output_dir / 'class_distribution.png'
+        plt.savefig(save_path)
         plt.close()
         
-        return stats
+        logging.info(f'Class distribution plot saved to {save_path}')
     
     def analyze_image_quality(self, sample_size: int = 100) -> Dict:
         """Analyze image quality metrics"""
@@ -91,6 +100,8 @@ class DataAnalyzer:
             noise = np.median(np.abs(image - np.median(image)))
             metrics['noise'].append(noise)
         
+        self.plot_image_statistics()
+        
         # Calculate statistics
         stats = {}
         for metric, values in metrics.items():
@@ -101,16 +112,41 @@ class DataAnalyzer:
                 'max': float(np.max(values))
             }
         
-        # Plot distributions
-        fig, axes = plt.subplots(2, 2, figsize=(12, 10))
-        for (metric, values), ax in zip(metrics.items(), axes.ravel()):
-            sns.histplot(values, ax=ax)
-            ax.set_title(f'{metric.capitalize()} Distribution')
-        plt.tight_layout()
-        plt.savefig(self.output_dir / 'image_quality_metrics.png')
+        return stats
+    
+    def plot_image_statistics(self):
+        """Plot image statistics"""
+        # Brightness distribution
+        plt.figure(figsize=(10, 6))
+        brightness_values = []
+        for img, _ in self.dataset:
+            brightness = torch.mean(img)
+            brightness_values.append(brightness.item())
+        
+        sns.histplot(brightness_values, bins=50)
+        plt.title('Image Brightness Distribution')
+        plt.xlabel('Average Brightness')
+        plt.ylabel('Frequency')
+        save_path = self.output_dir / 'brightness_distribution.png'
+        plt.savefig(save_path)
         plt.close()
         
-        return stats
+        # Contrast distribution
+        plt.figure(figsize=(10, 6))
+        contrast_values = []
+        for img, _ in self.dataset:
+            contrast = torch.std(img)
+            contrast_values.append(contrast.item())
+        
+        sns.histplot(contrast_values, bins=50)
+        plt.title('Image Contrast Distribution')
+        plt.xlabel('Contrast (Standard Deviation)')
+        plt.ylabel('Frequency')
+        save_path = self.output_dir / 'contrast_distribution.png'
+        plt.savefig(save_path)
+        plt.close()
+        
+        logging.info('Image statistics plots saved')
     
     def analyze_feature_space(self, model: torch.nn.Module, device: torch.device) -> None:
         """Analyze feature space using dimensionality reduction"""
@@ -130,20 +166,35 @@ class DataAnalyzer:
         features = np.concatenate(features)
         labels = np.array(labels)
         
-        # Apply dimensionality reduction
-        for method, reducer in [
-            ('PCA', PCA(n_components=2)),
-            ('t-SNE', TSNE(n_components=2))
-        ]:
-            reduced_features = reducer.fit_transform(features)
-            
-            plt.figure(figsize=(10, 8))
-            scatter = plt.scatter(reduced_features[:, 0], reduced_features[:, 1],
-                                c=labels, cmap='tab20')
-            plt.colorbar(scatter)
-            plt.title(f'{method} Visualization of Feature Space')
-            plt.savefig(self.output_dir / f'feature_space_{method.lower()}.png')
-            plt.close()
+        self.plot_dimensionality_reduction(features, labels)
+    
+    def plot_dimensionality_reduction(self, features, labels):
+        """Plot dimensionality reduction visualization"""
+        # Prepare data
+        X = features
+        y = labels
+        
+        # Apply PCA first to reduce dimensions
+        pca = PCA(n_components=50)
+        X_pca = pca.fit_transform(X)
+        
+        # Then apply t-SNE
+        tsne = TSNE(n_components=2, random_state=42)
+        X_tsne = tsne.fit_transform(X_pca)
+        
+        # Plot
+        plt.figure(figsize=(12, 8))
+        scatter = plt.scatter(X_tsne[:, 0], X_tsne[:, 1], c=y, cmap='tab20')
+        plt.title('t-SNE Visualization of Character Classes')
+        plt.xlabel('t-SNE Component 1')
+        plt.ylabel('t-SNE Component 2')
+        plt.colorbar(scatter, label='Character Class')
+        
+        save_path = self.output_dir / 'tsne_visualization.png'
+        plt.savefig(save_path)
+        plt.close()
+        
+        logging.info(f't-SNE visualization saved to {save_path}')
     
     def analyze_augmentation_impact(self, num_samples: int = 5) -> None:
         """Analyze the impact of data augmentation"""

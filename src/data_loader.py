@@ -31,79 +31,105 @@ class ThamudicDataset(Dataset):
             transform: تحويلات Albumentations
             train: ما إذا كانت هذه بيانات تدريب
         """
-        self.data_dir = data_dir
+        self.data_dir = Path(data_dir)
         self.transform = transform
         self.train = train
         
         # تحميل التعيين
         with open(mapping_file, 'r', encoding='utf-8') as f:
             self.class_mapping = json.load(f)
-            
+        
         # تحديد مجلد البيانات
-        self.data_folder = os.path.join(data_dir, 'train' if train else 'val')
+        split = 'train' if train else 'val'
+        self.data_folder = self.data_dir / split
+        
+        if not self.data_folder.exists():
+            raise ValueError(f"Data folder {self.data_folder} does not exist")
         
         # جمع المسارات والتسميات
         self.image_paths = []
         self.labels = []
         
         for class_folder in os.listdir(self.data_folder):
-            if not class_folder.startswith('letter_'):
+            class_path = self.data_folder / class_folder
+            if not class_path.is_dir():
                 continue
                 
-            class_path = os.path.join(self.data_folder, class_folder)
-            if not os.path.isdir(class_path):
+            class_idx = self.class_mapping.get(class_folder)
+            if class_idx is None:
+                logging.warning(f"Skipping unknown class folder: {class_folder}")
                 continue
-                
-            class_idx = int(class_folder.split('_')[1]) - 1
             
-            for img_name in os.listdir(class_path):
-                if img_name.endswith('.png'):
-                    self.image_paths.append(os.path.join(class_path, img_name))
-                    self.labels.append(class_idx)
-                    
-    def __len__(self):
-        return len(self.image_paths)
+            for img_file in class_path.glob('*.png'):
+                self.image_paths.append(img_file)
+                self.labels.append(class_idx)
         
-    def __getitem__(self, idx):
-        # تحميل الصورة
+        if not self.image_paths:
+            raise ValueError(f"No images found in {self.data_folder}")
+        
+        logging.info(f"Loaded {len(self.image_paths)} images for {split} set")
+    
+    def __len__(self) -> int:
+        return len(self.image_paths)
+    
+    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, int]:
         img_path = self.image_paths[idx]
-        image = cv2.imread(img_path)
+        label = self.labels[idx]
+        
+        # تحميل الصورة
+        image = cv2.imread(str(img_path))
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         
         # تطبيق التحويلات
         if self.transform:
             transformed = self.transform(image=image)
             image = transformed['image']
-            
-        # تحويل الصورة إلى تنسور
-        image = torch.from_numpy(image).permute(2, 0, 1).float()
         
-        return image, self.labels[idx]
+        # تحويل الصورة إلى تنسور
+        image = torch.from_numpy(image).float()
+        image = image.permute(2, 0, 1)  # HWC to CHW
+        image = image / 255.0  # Normalize to [0, 1]
+        
+        return image, label
 
 def create_data_transforms() -> Tuple[A.Compose, A.Compose]:
     """إنشاء تحويلات التدريب والتحقق"""
     train_transform = A.Compose([
-        A.RandomRotate90(p=0.5),
-        A.Transpose(p=0.5),
-        A.ShiftScaleRotate(shift_limit=0.1, scale_limit=0.1, rotate_limit=15, p=0.5),
+        A.Resize(224, 224),
+        A.OneOf([
+            A.RandomRotate90(p=0.5),
+            A.Rotate(limit=15, p=0.5),
+        ], p=0.6),
         A.OneOf([
             A.GaussNoise(var_limit=(10.0, 50.0), p=0.5),
-            A.GaussianBlur(blur_limit=(3, 7), p=0.5),
+            A.MultiplicativeNoise(multiplier=(0.9, 1.1), p=0.5),
         ], p=0.2),
-        A.GridDistortion(num_steps=5, distort_limit=0.2, p=0.2),
-        A.OpticalDistortion(distort_limit=0.2, shift_limit=0.2, p=0.2),
-        A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.2),
-        A.Normalize(mean=[0.485], std=[0.229], p=1.0),
+        A.OneOf([
+            A.MotionBlur(blur_limit=3, p=0.2),
+            A.MedianBlur(blur_limit=3, p=0.1),
+            A.Blur(blur_limit=3, p=0.1),
+        ], p=0.2),
+        A.OneOf([
+            A.OpticalDistortion(distort_limit=0.05, shift_limit=0.05, p=0.3),
+            A.GridDistortion(distort_limit=0.1, p=0.1),
+            A.ElasticTransform(alpha=1, sigma=50, alpha_affine=50, p=0.3),
+        ], p=0.2),
+        A.OneOf([
+            A.CLAHE(clip_limit=2, p=0.3),
+            A.Sharpen(alpha=(0.2, 0.5), lightness=(0.5, 1.0), p=0.3),
+            A.RandomBrightnessContrast(brightness_limit=0.2, contrast_limit=0.2, p=0.3),
+        ], p=0.3),
+        A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
     
     val_transform = A.Compose([
-        A.Normalize(mean=[0.485], std=[0.229], p=1.0),
+        A.Resize(224, 224),
+        A.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
     
     return train_transform, val_transform
 
-def load_and_preprocess_data(data_dir: str,
-                           mapping_file: str) -> Tuple[ThamudicDataset, ThamudicDataset]:
+def load_and_preprocess_data(data_dir: str, mapping_file: str) -> Tuple[Dataset, Dataset]:
     """
     تحميل ومعالجة بيانات الحروف الثمودية
     
@@ -152,32 +178,28 @@ def analyze_dataset(dataset: ThamudicDataset) -> Dict:
         قاموس يحتوي على إحصائيات مجموعة البيانات
     """
     stats = {
-        'num_samples': len(dataset),
+        'total_images': len(dataset),
         'num_classes': len(dataset.class_mapping),
         'class_distribution': {},
-        'image_stats': {
-            'min': float('inf'),
-            'max': float('-inf'),
-            'mean': 0,
-            'std': 0
-        }
+        'image_sizes': [],
+        'aspect_ratios': []
     }
     
     # تحليل توزيع الفئات
-    unique, counts = np.unique(dataset.labels, return_counts=True)
-    for u, c in zip(unique, counts):
-        stats['class_distribution'][u] = int(c)
+    for label in dataset.labels:
+        class_name = list(dataset.class_mapping.keys())[list(dataset.class_mapping.values()).index(label)]
+        stats['class_distribution'][class_name] = stats['class_distribution'].get(class_name, 0) + 1
     
     # تحليل إحصائيات الصور
-    pixel_values = []
-    for i in range(min(100, len(dataset))):  # أخذ عينة من 100 صورة
-        image, _ = dataset[i]
-        pixel_values.append(image.numpy())
+    for img_path in dataset.image_paths:
+        img = cv2.imread(str(img_path))
+        h, w = img.shape[:2]
+        stats['image_sizes'].append((w, h))
+        stats['aspect_ratios'].append(w/h)
     
-    pixel_values = np.concatenate(pixel_values)
-    stats['image_stats']['min'] = float(np.min(pixel_values))
-    stats['image_stats']['max'] = float(np.max(pixel_values))
-    stats['image_stats']['mean'] = float(np.mean(pixel_values))
-    stats['image_stats']['std'] = float(np.std(pixel_values))
+    # حساب الإحصائيات الملخصة
+    stats['avg_width'] = np.mean([s[0] for s in stats['image_sizes']])
+    stats['avg_height'] = np.mean([s[1] for s in stats['image_sizes']])
+    stats['avg_aspect_ratio'] = np.mean(stats['aspect_ratios'])
     
     return stats
