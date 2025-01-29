@@ -218,122 +218,296 @@ def draw_boxes(image, boxes, predictions, letters_mapping, class_mapping):
         return image
 
 def main():
-    # إعداد الصفحة
     st.set_page_config(
-        page_title="نظام التعرف على النقوش الثمودية",
+        page_title="مودل التعرف على النصوص الثمودية",
         page_icon="🔍",
-        layout="wide"
+        layout="wide",
+        initial_sidebar_state="expanded"
     )
     
-    # إضافة CSS مخصص
+    # تطبيق CSS مخصص
     st.markdown("""
-        <style>
+    <style>
+        /* التنسيق العام */
         .stApp {
             direction: rtl;
+            background-color: #f8f9fa;
+        }
+        
+        /* العنوان الرئيسي */
+        .main-title {
+            text-align: center;
+            color: #1f4287;
+            padding: 20px 0;
+            margin: 0 auto 30px auto;
+            max-width: 800px;
+            border-bottom: 3px solid #1f4287;
+            font-size: 2.2em;
+            font-weight: bold;
+            background: linear-gradient(45deg, #1f4287, #4776b9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* العناوين الفرعية */
+        h3 {
+            color: #2d5a77;
+            margin: 15px 0;
+            padding: 10px 15px;
+            border-right: 4px solid #1f4287;
+            background: linear-gradient(to left, #f8f9fa, transparent);
+            border-radius: 0 5px 5px 0;
+        }
+        
+        /* الحاويات */
+        .custom-container {
+            background-color: white;
+            border: 1px solid #e6e6e6;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .custom-container:hover {
+            box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        
+        /* جدول النتائج */
+        .results-table {
+            font-size: 14px;
+            margin: 15px 0;
+        }
+        
+        .dataframe {
+            direction: rtl;
+            text-align: right !important;
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .dataframe th {
+            text-align: right !important;
+            background-color: #1f4287 !important;
+            color: white !important;
+            padding: 12px !important;
+            font-weight: 600;
+        }
+        
+        .dataframe td {
+            text-align: right !important;
+            padding: 12px !important;
+            border-bottom: 1px solid #e6e6e6;
+            background-color: white;
+        }
+        
+        .dataframe tr:hover td {
+            background-color: #f8f9fa;
+        }
+        
+        /* زر التحميل */
+        .stUploadButton>button {
+            width: 100%;
+            max-width: 300px;
+            margin: 10px auto;
+            padding: 10px 20px;
+            background-color: #1f4287;
+            color: white;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .stUploadButton>button:hover {
+            background-color: #2d5a77;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        /* الرسائل */
+        .stAlert {
+            direction: rtl;
             text-align: right;
+            border-radius: 8px;
+            margin: 10px 0;
         }
-        .css-1d391kg {
-            padding: 1rem;
-            background-color: #f0f2f6;
-            border-radius: 0.5rem;
-            margin-bottom: 1rem;
+        
+        /* التعليقات التوضيحية */
+        .caption {
+            text-align: center;
+            color: #666;
+            margin: 8px 0;
+            font-size: 0.9em;
+            font-style: italic;
         }
-        .stButton>button {
-            width: 50%;
-            margin-top: 1rem;
+        
+        /* تنسيق الصور */
+        .stImage {
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
-        </style>
+        
+        /* شريط التقدم */
+        .stProgress {
+            direction: rtl;
+        }
+        
+        .stProgress > div > div {
+            background: linear-gradient(45deg, #1f4287, #4776b9);
+            border-radius: 10px;
+        }
+        
+        /* تنسيق الأقسام */
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        /* معلومات إضافية */
+        .info-text {
+            color: #666;
+            font-size: 0.9em;
+            margin: 5px 0;
+            padding: 0 10px;
+        }
+        
+        /* نسبة الثقة */
+        .confidence {
+            color: #1f4287;
+            font-weight: bold;
+        }
+        
+        /* تنسيق الحروف */
+        .letter {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #2d5a77;
+        }
+    </style>
     """, unsafe_allow_html=True)
     
-    # العنوان
-    st.title("مودل التعرف على النقوش الثمودية")
-    st.markdown("---")
+    # العنوان الرئيسي مع أيقونة
+    st.markdown("""
+        <div style='text-align: center; margin-bottom: 30px;'>
+            <h1 class='main-title'>🔍 مودل التعرف على النصوص الثمودية</h1>
+            <p class='info-text'>نظام ذكي للتعرف على الحروف الثمودية وتحويلها إلى النص العربي</p>
+        </div>
+    """, unsafe_allow_html=True)
     
-    # تحميل النموذج
+    # Load model and mapping
     model, class_mapping, letters_mapping = load_model()
     
     if model is None or class_mapping is None or letters_mapping is None:
         return
         
-    # تحميل الصورة
-    st.subheader("تحميل صورة")
-    uploaded_file = st.file_uploader("اختر صورة للنقش الثمودي", type=['png', 'jpg', 'jpeg'])
+    # إنشاء صفين
+    col1, col2 = st.columns([1, 2])
+    
+    with col1:
+        st.markdown("<div class='section'>", unsafe_allow_html=True)
+        st.markdown("<h3>تحميل صورة للتعرف عليها</h3>", unsafe_allow_html=True)
+        st.markdown("<p class='info-text'>يمكنك تحميل صورة بصيغة PNG أو JPG أو JPEG</p>", unsafe_allow_html=True)
+        uploaded_file = st.file_uploader("اختر صورة...", type=['png', 'jpg', 'jpeg'])
+        st.markdown("</div>", unsafe_allow_html=True)
     
     if uploaded_file is not None:
         try:
-            # عرض الصورة الأصلية
-            original_image = Image.open(uploaded_file).convert('RGB')
-            
             # اكتشاف مواقع الحروف
-            boxes = detect_letters(original_image)
+            with st.spinner('جاري تحليل الصورة...'):
+                original_image = Image.open(uploaded_file).convert('RGB')
+                boxes = detect_letters(original_image)
             
-            predictions = []
-            converted_boxes = []  # قائمة جديدة للصناديق المحولة
-            for x, y, w, h in boxes:
-                # تحويل تنسيق الصندوق
-                converted_boxes.append((x, y, x+w, y+h))
+            if not boxes:
+                st.error("لم يتم العثور على حروف في الصورة")
+                return
                 
-                # اقتصاص الحرف
+            # تحويل الصناديق إلى الشكل المطلوب للتنبؤ
+            converted_boxes = []
+            letter_images = []
+            
+            for box in boxes:
+                x, y, w, h = box
                 letter_image = original_image.crop((x, y, x+w, y+h))
+                letter_images.append(letter_image)
+                converted_boxes.append((x, y, x+w, y+h))
+            
+            # التنبؤ بالحروف
+            predictions = []
+            confidences = []
+            
+            # إضافة شريط تقدم
+            progress_text = st.markdown("<p class='info-text'>جاري التعرف على الحروف...</p>", unsafe_allow_html=True)
+            progress_bar = st.progress(0)
+            
+            for i, letter_image in enumerate(letter_images):
+                # تحديث شريط التقدم
+                progress = (i + 1) / len(letter_images)
+                progress_bar.progress(progress)
                 
-                # معالجة الصورة
-                image_tensor = preprocess_image(letter_image)
+                # تجهيز الصورة
+                processed_image = preprocess_image(letter_image)
                 
                 # التنبؤ
                 with torch.no_grad():
-                    outputs = model(image_tensor)
-                    probabilities = torch.nn.functional.softmax(outputs, dim=1)[0]
-                    predicted_idx = torch.argmax(probabilities).item()
-                    confidence = probabilities[predicted_idx].item() * 100
-                    
-                predictions.append(predicted_idx)  # تخزين فقط مؤشر التنبؤ
+                    outputs = model(processed_image)
+                    probabilities = torch.softmax(outputs, dim=1)
+                    confidence, prediction = torch.max(probabilities, 1)
+                    predictions.append(prediction.item())
+                    confidences.append(confidence.item())
             
-            if predictions:
-                st.markdown("**نتيجة التعرف**")
-                # رسم المربعات والتنبؤات
-                result_image = original_image.copy()
-                result_image = draw_boxes(result_image, converted_boxes, predictions, letters_mapping, class_mapping)
-                st.image(result_image, use_container_width=True)
+            # إخفاء شريط التقدم والنص
+            progress_bar.empty()
+            progress_text.empty()
             
-            # إضافة خط فاصل
-            st.markdown("---")
+            # رسم المربعات والتنبؤات
+            result_image = original_image.copy()
+            result_image = draw_boxes(result_image, converted_boxes, predictions, letters_mapping, class_mapping)
             
-            # عرض النتائج في جدول
-            st.subheader("نتائج التعرف")
-            
-            # إنشاء بيانات الجدول
-            table_data = []
-            for i, ((x, y, w, h), pred) in enumerate(zip(boxes, predictions)):
-                thamudic_letter = None
-                for letter, idx in class_mapping.items():
-                    if idx == pred:
-                        thamudic_letter = letter
-                        break
-                arabic_letter = letters_mapping.get(thamudic_letter, "غير معروف")
-                table_data.append({
-                    "رقم الحرف": f"letter_{i+1}",
-                    "الحرف العربي": arabic_letter,
-                    "الحرف الثمودي": thamudic_letter,
-                    "نسبة الثقة": f"{confidence:.1f}%"
-                })
-            
-            # عرض الجدول
-            if table_data:
-                st.table(table_data)
-            else:
-                st.warning("لم يتم التعرف على أي حروف بشكل مؤكد")
+            # عرض النتائج
+            with col2:
+                st.markdown("<div class='section'>", unsafe_allow_html=True)
+                st.markdown("<h3>نتائج التعرف</h3>", unsafe_allow_html=True)
                 
-        except Exception as e:
-            st.error(f"خطأ في معالجة الصورة: {str(e)}")
+                # عرض الصورة النهائية
+                st.markdown("<div class='custom-container'>", unsafe_allow_html=True)
+                st.image(result_image, caption="نتائج التعرف", use_container_width=True)
+                st.markdown("<p class='caption'>الحروف المكتشفة مع تصنيفها</p>", unsafe_allow_html=True)
+                st.markdown("</div>", unsafe_allow_html=True)
+                
+                # عرض جدول النتائج
+                st.markdown("<div class='custom-container results-table'>", unsafe_allow_html=True)
+                results_data = []
+                for i, (pred, conf) in enumerate(zip(predictions, confidences)):
+                    letter_name = next((k for k, v in class_mapping.items() if v == pred), "غير معروف")
+                    arabic_letter = letters_mapping.get(letter_name, "؟")
+                    results_data.append({
+                        "الترتيب": f"#{i + 1}",
+                        "الحرف الثمودي": f"<span class='letter'>{letter_name}</span>",
+                        "الحرف العربي": f"<span class='letter'>{arabic_letter}</span>",
+                        "نسبة الثقة": f"<span class='confidence'>{conf * 100:.1f}%</span>"
+                    })
+                
+                # تحويل البيانات إلى DataFrame وعرضه
+                import pandas as pd
+                df = pd.DataFrame(results_data)
+                st.markdown("<h4 style='color: #2d5a77; margin: 15px 0;'>تفاصيل النتائج</h4>", unsafe_allow_html=True)
+                st.write(df.to_html(escape=False, index=False, classes='dataframe'), unsafe_allow_html=True)
+                st.markdown("</div>", unsafe_allow_html=True)
+                st.markdown("</div>", unsafe_allow_html=True)
             
-    # معلومات إضافية
-    with st.expander("معلومات عن النظام"):
-        st.write("""
-        - هذا النظام يستخدم شبكة عصبية عميقة للتعرف على الحروف الثمودية.
-        - النظام مدرب على مجموعة من صور الحروف الثمودية.
-        - دقة النموذج تعتمد على جودة الصورة المدخلة ووضوحها.
-        - يمكن للنظام التعرف على عدة حروف في نفس الصورة.
-        """)
+        except Exception as e:
+            st.error(f"حدث خطأ أثناء معالجة الصورة: {str(e)}")
+            logging.error(f"Error processing image: {str(e)}")
 
 if __name__ == "__main__":
     main()
