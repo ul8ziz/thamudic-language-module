@@ -1,0 +1,116 @@
+{
+    "thamudic_letters": [
+        {
+            "index": 0,
+            "name": "letter_1"
+        },
+        {
+            "index": 1,
+            "name": "letter_2"
+        },
+        {
+            "index": 2,
+            "name": "letter_3"
+        },
+        {
+            "index": 3,
+            "name": "letter_4"
+        },
+        {
+            "index": 4,
+            "name": "letter_5"
+        },
+        {
+            "index": 5,
+            "name": "letter_6"
+        },
+        {
+            "index": 6,
+            "name": "letter_7"
+        },
+        {
+            "index": 7,
+            "name": "letter_8"
+        },
+        {
+            "index": 8,
+            "name": "letter_9"
+        },
+        {
+            "index": 9,
+            "name": "letter_10"
+        },
+        {
+            "index": 10,
+            "name": "letter_11"
+        },
+        {
+            "index": 11,
+            "name": "letter_12"
+        },
+        {
+            "index": 12,
+            "name": "letter_13"
+        },
+        {
+            "index": 13,
+            "name": "letter_14"
+        },
+        {
+            "index": 14,
+            "name": "letter_15"
+        },
+        {
+            "index": 15,
+            "name": "letter_16"
+        },
+        {
+            "index": 16,
+            "name": "letter_17"
+        },
+        {
+            "index": 17,
+            "name": "letter_18"
+        },
+        {
+            "index": 18,
+            "name": "letter_19"
+        },
+        {
+            "index": 19,
+            "name": "letter_20"
+        },
+        {
+            "index": 20,
+            "name": "letter_21"
+        },
+        {
+            "index": 21,
+            "name": "letter_22"
+        },
+        {
+            "index": 22,
+            "name": "letter_23"
+        },
+        {
+            "index": 23,
+            "name": "letter_24"
+        },
+        {
+            "index": 24,
+            "name": "letter_25"
+        },
+        {
+            "index": 25,
+            "name": "letter_26"
+        },
+        {
+            "index": 26,
+            "name": "letter_27"
+        },
+        {
+            "index": 27,
+            "name": "letter_28"
+        }
+    ]
+}
