@@ -5,224 +5,206 @@
 import os
 import json
 import logging
+from datetime import datetime
+from pathlib import Path
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
+from torchvision import transforms
 import albumentations as A
-from albumentations.pytorch import ToTensorV2
-from pathlib import Path
+from torch.utils.tensorboard import SummaryWriter
 
-from data_loader import ThamudicDataset
-from thamudic_model import ThamudicRecognitionModel
+from .models import ThamudicRecognitionModel
+from .data_processing import ThamudicDataset
+from .config import (
+    PROJECT_ROOT,
+    DATA_DIR,
+    MODELS_DIR,
+    RUNS_DIR,
+    MODEL_CONFIG,
+    TRAINING_CONFIG
+)
 
 # إعداد التسجيل
 logging.basicConfig(
+    filename=os.path.join(PROJECT_ROOT, 'training.log'),
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-def create_transforms():
-    """إنشاء تحويلات الصور"""
-    train_transform = A.Compose([
-        A.Resize(224, 224),
-        A.ShiftScaleRotate(shift_limit=0.05, scale_limit=0.05, rotate_limit=15, p=0.5),
-        A.RandomBrightnessContrast(p=0.5),
-        A.Normalize(mean=[0.485], std=[0.229]),
-        ToTensorV2(),
-    ])
-    
-    val_transform = A.Compose([
-        A.Resize(224, 224),
-        A.Normalize(mean=[0.485], std=[0.229]),
-        ToTensorV2(),
-    ])
-    
-    return train_transform, val_transform
-
-def create_data_loaders(data_dir: str, mapping: dict, batch_size: int = 32):
-    """إنشاء محملات البيانات"""
-    try:
-        train_transform, val_transform = create_transforms()
-        
-        # إنشاء مجموعة البيانات
-        dataset = ThamudicDataset(
-            data_dir=data_dir,
-            mapping=mapping,
-            transform=train_transform,
-            train=True
-        )
-        
-        # تقسيم البيانات
-        train_size = int(0.8 * len(dataset))
-        val_size = len(dataset) - train_size
-        train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
-        
-        # إنشاء محملات البيانات
-        train_loader = DataLoader(
-            train_dataset,
-            batch_size=batch_size,
-            shuffle=True,
-            num_workers=0,
-            pin_memory=True
-        )
-        
-        val_loader = DataLoader(
-            val_dataset,
-            batch_size=batch_size,
-            shuffle=False,
-            num_workers=0,
-            pin_memory=True
-        )
-        
-        return train_loader, val_loader
-    
-    except Exception as e:
-        logging.error(f"Error creating data loaders: {str(e)}")
-        raise
-
-def train_model(
-    data_dir: str,
-    mapping_path: str,
-    num_epochs: int = 50,
-    batch_size: int = 32,
-    learning_rate: float = 0.001,
-    device: str = None
-):
-    """تدريب النموذج"""
-    try:
-        # تحديد الجهاز
-        if device is None:
-            device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        logging.info(f"استخدام الجهاز: {device}")
-        
-        # تحميل التعيين
-        with open(mapping_path, 'r', encoding='utf-8') as f:
-            mapping = json.load(f)
-        
-        # إنشاء محملات البيانات
-        train_loader, val_loader = create_data_loaders(data_dir, mapping, batch_size)
-        logging.info(f"حجم مجموعة التدريب: {len(train_loader.dataset)}")
-        logging.info(f"حجم مجموعة التحقق: {len(val_loader.dataset)}")
+class ThamudicTrainer:
+    def __init__(self, model_config=None, training_config=None):
+        """تهيئة المدرب"""
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.model_config = model_config or MODEL_CONFIG
+        self.training_config = training_config or TRAINING_CONFIG
         
         # إنشاء النموذج
-        num_classes = len(mapping['thamudic_letters'])
-        model = ThamudicRecognitionModel(num_classes=num_classes)
-        model = model.to(device)
+        self.model = ThamudicRecognitionModel(
+            num_classes=28,  # عدد الحروف الثمودية
+            image_size=self.model_config['image_size']
+        ).to(self.device)
         
-        # إعداد دالة الخسارة والمحسن
-        criterion = nn.CrossEntropyLoss()
-        optimizer = optim.Adam(model.parameters(), lr=learning_rate)
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer, mode='min', factor=0.5, patience=5, verbose=True
+        # إعداد معايير الخسارة والمحسن
+        self.criterion = nn.CrossEntropyLoss()
+        self.optimizer = optim.AdamW(
+            self.model.parameters(),
+            lr=self.model_config['learning_rate'],
+            weight_decay=self.training_config['weight_decay']
         )
         
-        # التدريب
-        best_val_loss = float('inf')
+        # إعداد جدولة معدل التعلم
+        self.scheduler = optim.lr_scheduler.CosineAnnealingLR(
+            self.optimizer,
+            T_max=self.model_config['num_epochs'],
+            eta_min=self.training_config['min_lr']
+        )
+        
+        # إعداد Tensorboard
+        current_time = datetime.now().strftime('%Y%m%d-%H%M%S')
+        self.writer = SummaryWriter(os.path.join(RUNS_DIR, 'tensorboard', current_time))
+        
+        self.best_val_loss = float('inf')
+        self.patience_counter = 0
+        
+    def train(self, train_loader, val_loader, num_epochs=None):
+        """تدريب النموذج"""
+        num_epochs = num_epochs or self.model_config['num_epochs']
+        
         for epoch in range(num_epochs):
-            # وضع التدريب
-            model.train()
-            train_loss = 0.0
+            # التدريب
+            self.model.train()
+            train_loss = 0
             train_correct = 0
             train_total = 0
             
-            for batch_idx, (images, labels) in enumerate(train_loader):
-                images, labels = images.to(device), labels.to(device)
+            for batch_idx, (images, targets) in enumerate(train_loader):
+                images, targets = images.to(self.device), targets.to(self.device)
                 
-                optimizer.zero_grad()
-                outputs = model(images)
-                loss = criterion(outputs, labels)
+                self.optimizer.zero_grad()
+                outputs = self.model(images)
+                loss = self.criterion(outputs, targets)
                 loss.backward()
-                optimizer.step()
+                self.optimizer.step()
                 
                 train_loss += loss.item()
                 _, predicted = outputs.max(1)
-                train_total += labels.size(0)
-                train_correct += predicted.eq(labels).sum().item()
+                train_total += targets.size(0)
+                train_correct += predicted.eq(targets).sum().item()
                 
-                if batch_idx % 5 == 0:  # عرض التقدم كل 5 دفعات
-                    batch_acc = 100. * train_correct / train_total
-                    batch_loss = train_loss / (batch_idx + 1)
-                    logging.info(
-                        f'الحقبة: {epoch}/{num_epochs} | '
-                        f'الدفعة: {batch_idx}/{len(train_loader)} | '
-                        f'الخسارة: {batch_loss:.4f} | '
-                        f'الدقة: {batch_acc:.2f}%'
-                    )
-            
-            # وضع التقييم
-            model.eval()
-            val_loss = 0.0
-            val_correct = 0
-            val_total = 0
-            
-            with torch.no_grad():
-                for images, labels in val_loader:
-                    images, labels = images.to(device), labels.to(device)
-                    outputs = model(images)
-                    loss = criterion(outputs, labels)
-                    
-                    val_loss += loss.item()
-                    _, predicted = outputs.max(1)
-                    val_total += labels.size(0)
-                    val_correct += predicted.eq(labels).sum().item()
-            
-            # حساب متوسط الخسارة والدقة
             train_loss = train_loss / len(train_loader)
             train_acc = 100. * train_correct / train_total
-            val_loss = val_loss / len(val_loader)
-            val_acc = 100. * val_correct / val_total
             
-            logging.info(
-                f'نتائج الحقبة {epoch}/{num_epochs}:\n'
-                f'خسارة التدريب: {train_loss:.4f} | '
-                f'دقة التدريب: {train_acc:.2f}% | '
-                f'خسارة التحقق: {val_loss:.4f} | '
-                f'دقة التحقق: {val_acc:.2f}%'
-            )
+            # التحقق
+            val_loss, val_acc = self.validate(val_loader)
             
             # تحديث جدولة معدل التعلم
-            scheduler.step(val_loss)
+            self.scheduler.step()
+            
+            # تسجيل المقاييس
+            self.writer.add_scalar('Loss/train', train_loss, epoch)
+            self.writer.add_scalar('Loss/val', val_loss, epoch)
+            self.writer.add_scalar('Accuracy/train', train_acc, epoch)
+            self.writer.add_scalar('Accuracy/val', val_acc, epoch)
+            
+            logging.info(f'Epoch {epoch+1}/{num_epochs}:')
+            logging.info(f'Train Loss: {train_loss:.4f}, Train Acc: {train_acc:.2f}%')
+            logging.info(f'Val Loss: {val_loss:.4f}, Val Acc: {val_acc:.2f}%')
             
             # حفظ أفضل نموذج
-            if val_loss < best_val_loss:
-                best_val_loss = val_loss
-                models_dir = Path(__file__).parent.parent / 'models'
-                models_dir.mkdir(exist_ok=True)
-                
-                checkpoint = {
-                    'model_state_dict': model.state_dict(),
-                    'optimizer_state_dict': optimizer.state_dict(),
-                    'epoch': epoch,
-                    'val_loss': val_loss,
-                    'val_acc': val_acc
-                }
-                
-                save_path = models_dir / 'thamudic_model.pth'
-                torch.save(checkpoint, save_path)
-                logging.info(f'تم حفظ أفضل نموذج في {save_path}')
+            if val_loss < self.best_val_loss:
+                self.best_val_loss = val_loss
+                self.save_checkpoint(epoch, val_loss, val_acc)
+                self.patience_counter = 0
+            else:
+                self.patience_counter += 1
+            
+            # التوقف المبكر
+            if self.patience_counter >= self.model_config['early_stopping_patience']:
+                logging.info('Early stopping triggered')
+                break
     
-    except Exception as e:
-        logging.error(f"Error during training: {str(e)}")
-        raise
+    def validate(self, val_loader):
+        """التحقق من النموذج"""
+        self.model.eval()
+        val_loss = 0
+        val_correct = 0
+        val_total = 0
+        
+        with torch.no_grad():
+            for images, targets in val_loader:
+                images, targets = images.to(self.device), targets.to(self.device)
+                outputs = self.model(images)
+                loss = self.criterion(outputs, targets)
+                
+                val_loss += loss.item()
+                _, predicted = outputs.max(1)
+                val_total += targets.size(0)
+                val_correct += predicted.eq(targets).sum().item()
+        
+        val_loss = val_loss / len(val_loader)
+        val_acc = 100. * val_correct / val_total
+        return val_loss, val_acc
+    
+    def save_checkpoint(self, epoch, val_loss, val_acc):
+        """حفظ نقطة التفتيش"""
+        checkpoint = {
+            'epoch': epoch,
+            'model_state_dict': self.model.state_dict(),
+            'optimizer_state_dict': self.optimizer.state_dict(),
+            'scheduler_state_dict': self.scheduler.state_dict(),
+            'val_loss': val_loss,
+            'val_acc': val_acc,
+            'model_config': self.model_config,
+            'training_config': self.training_config
+        }
+        
+        checkpoint_path = os.path.join(
+            MODELS_DIR,
+            'checkpoints',
+            f'model_checkpoint_epoch_{epoch}_loss_{val_loss:.4f}_acc_{val_acc:.2f}.pt'
+        )
+        torch.save(checkpoint, checkpoint_path)
+        logging.info(f'Saved checkpoint to {checkpoint_path}')
+
+def main():
+    """النقطة الرئيسية لتشغيل التدريب"""
+    # تحميل البيانات
+    transform = transforms.Compose([
+        transforms.Resize((MODEL_CONFIG['image_size'], MODEL_CONFIG['image_size'])),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+    
+    dataset = ThamudicDataset(
+        data_dir=os.path.join(DATA_DIR, 'letters'),
+        transform=transform
+    )
+    
+    # تقسيم البيانات
+    train_size = int((1 - MODEL_CONFIG['validation_split']) * len(dataset))
+    val_size = len(dataset) - train_size
+    train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
+    
+    train_loader = DataLoader(
+        train_dataset,
+        batch_size=MODEL_CONFIG['batch_size'],
+        shuffle=True,
+        num_workers=4
+    )
+    
+    val_loader = DataLoader(
+        val_dataset,
+        batch_size=MODEL_CONFIG['batch_size'],
+        shuffle=False,
+        num_workers=4
+    )
+    
+    # إنشاء وتدريب النموذج
+    trainer = ThamudicTrainer()
+    trainer.train(train_loader, val_loader)
 
 if __name__ == '__main__':
-    # المسارات
-    base_dir = Path(__file__).parent.parent
-    data_dir = base_dir / 'data' / 'letters'  # المجلد الرئيسي للبيانات
-    mapping_path = base_dir / 'data' / 'mapping.json'
-    
-    # التأكد من وجود المسارات
-    if not data_dir.exists():
-        raise FileNotFoundError(f"Data directory not found: {data_dir}")
-    if not mapping_path.exists():
-        raise FileNotFoundError(f"Mapping file not found: {mapping_path}")
-    
-    # تدريب النموذج
-    train_model(
-        data_dir=str(data_dir),
-        mapping_path=str(mapping_path),
-        num_epochs=50,
-        batch_size=32,
-        learning_rate=0.001
-    )
+    main()
