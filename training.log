@@ -1,0 +1,7 @@
+2025-02-11 16:46:54,359 - INFO - Using device: cuda
+2025-02-11 16:46:54,389 - INFO - Number of training samples: 1779
+2025-02-11 16:46:54,389 - INFO - Number of validation samples: 461
+2025-02-11 16:48:09,882 - INFO - Epoch 1/50:
+2025-02-11 16:48:09,882 - INFO - Train Loss: 3.235 | Train Acc: 4.89%
+2025-02-11 16:48:09,882 - INFO - Val Loss: 3.544 | Val Acc: 7.59%
+2025-02-11 16:48:10,027 - INFO - Saved best model to D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
