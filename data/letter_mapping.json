@@ -1,30 +1,172 @@
 {
-    "letter_1": 0,
-    "letter_2": 1,
-    "letter_3": 2,
-    "letter_4": 3,
-    "letter_5": 4,
-    "letter_6": 5,
-    "letter_7": 6,
-    "letter_8": 7,
-    "letter_9": 8,
-    "letter_10": 9,
-    "letter_11": 10,
-    "letter_12": 11,
-    "letter_13": 12,
-    "letter_14": 13,
-    "letter_15": 14,
-    "letter_16": 15,
-    "letter_17": 16,
-    "letter_18": 17,
-    "letter_19": 18,
-    "letter_20": 19,
-    "letter_21": 20,
-    "letter_22": 21,
-    "letter_23": 22,
-    "letter_24": 23,
-    "letter_25": 24,
-    "letter_26": 25,
-    "letter_27": 26,
-    "letter_28": 27
+    "thamudic_letters": [
+        {
+            "index": 0,
+            "letter": "ا",
+            "symbol": "𐪀",
+            "name": "alif"
+        },
+        {
+            "index": 1,
+            "letter": "ب",
+            "symbol": "𐪁",
+            "name": "ba"
+        },
+        {
+            "index": 2,
+            "letter": "ت",
+            "symbol": "𐪂",
+            "name": "ta"
+        },
+        {
+            "index": 3,
+            "letter": "ث",
+            "symbol": "𐪃",
+            "name": "tha"
+        },
+        {
+            "index": 4,
+            "letter": "ج",
+            "symbol": "𐪄",
+            "name": "jim"
+        },
+        {
+            "index": 5,
+            "letter": "ح",
+            "symbol": "𐪅",
+            "name": "ha"
+        },
+        {
+            "index": 6,
+            "letter": "خ",
+            "symbol": "𐪆",
+            "name": "kha"
+        },
+        {
+            "index": 7,
+            "letter": "د",
+            "symbol": "𐪇",
+            "name": "dal"
+        },
+        {
+            "index": 8,
+            "letter": "ذ",
+            "symbol": "𐪈",
+            "name": "dhal"
+        },
+        {
+            "index": 9,
+            "letter": "ر",
+            "symbol": "𐪉",
+            "name": "ra"
+        },
+        {
+            "index": 10,
+            "letter": "ز",
+            "symbol": "𐪊",
+            "name": "zay"
+        },
+        {
+            "index": 11,
+            "letter": "س",
+            "symbol": "𐪋",
+            "name": "sin"
+        },
+        {
+            "index": 12,
+            "letter": "ش",
+            "symbol": "𐪌",
+            "name": "shin"
+        },
+        {
+            "index": 13,
+            "letter": "ص",
+            "symbol": "𐪍",
+            "name": "sad"
+        },
+        {
+            "index": 14,
+            "letter": "ض",
+            "symbol": "𐪎",
+            "name": "dad"
+        },
+        {
+            "index": 15,
+            "letter": "ط",
+            "symbol": "𐪏",
+            "name": "ta"
+        },
+        {
+            "index": 16,
+            "letter": "ظ",
+            "symbol": "𐪐",
+            "name": "za"
+        },
+        {
+            "index": 17,
+            "letter": "ع",
+            "symbol": "𐪑",
+            "name": "ayn"
+        },
+        {
+            "index": 18,
+            "letter": "غ",
+            "symbol": "𐪒",
+            "name": "ghayn"
+        },
+        {
+            "index": 19,
+            "letter": "ف",
+            "symbol": "𐪓",
+            "name": "fa"
+        },
+        {
+            "index": 20,
+            "letter": "ق",
+            "symbol": "𐪔",
+            "name": "qaf"
+        },
+        {
+            "index": 21,
+            "letter": "ك",
+            "symbol": "𐪕",
+            "name": "kaf"
+        },
+        {
+            "index": 22,
+            "letter": "ل",
+            "symbol": "𐪖",
+            "name": "lam"
+        },
+        {
+            "index": 23,
+            "letter": "م",
+            "symbol": "𐪗",
+            "name": "mim"
+        },
+        {
+            "index": 24,
+            "letter": "ن",
+            "symbol": "𐪘",
+            "name": "nun"
+        },
+        {
+            "index": 25,
+            "letter": "ه",
+            "symbol": "𐪙",
+            "name": "ha"
+        },
+        {
+            "index": 26,
+            "letter": "و",
+            "symbol": "𐪚",
+            "name": "waw"
+        },
+        {
+            "index": 27,
+            "letter": "ي",
+            "symbol": "𐪛",
+            "name": "ya"
+        }
+    ]
 }
