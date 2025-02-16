@@ -42,7 +42,7 @@ class ThamudicApp:
             }
         
         # Initialize the model
-        self.model = ThamudicRecognitionModel(num_classes=self.num_classes)
+        self.model = ThamudicRecognitionModel(num_classes=len(self.mapping_data['thamudic_letters']))
         self.load_model(model_path)
         self.model.eval()
         
@@ -228,7 +228,7 @@ class ThamudicApp:
             
             # Predict letters
             predictions = []
-            confidences = []  # تأكد من تعريف المتغير هنا
+            confidences = []  # Explicitly define confidences list
             for letter_image in letter_images:
                 processed_image = self.preprocess_image(letter_image)
                 
@@ -242,7 +242,7 @@ class ThamudicApp:
             # Draw result on image
             result_image = self.draw_result_on_image(image, boxes, predictions)
             
-            return predictions, result_image
+            return predictions, confidences, result_image
             
         except Exception as e:
             logging.error(f"Error making prediction: {str(e)}")
@@ -320,7 +320,7 @@ def main():
             with col2:
                 st.subheader("Analysis Results")
                 with st.spinner('Analyzing image...'):
-                    predictions, result_image = app.predict(
+                    predictions, confidences, result_image = app.predict(
                         image,
                         contrast=contrast,
                         brightness=brightness,

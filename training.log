@@ -364,3 +364,172 @@
 2025-02-13 17:49:56,498 - INFO - Val Loss: 0.005 | Val Acc: 100.00%
 2025-02-13 17:49:56,498 - INFO - Early stopping triggered
 2025-02-13 17:49:56,502 - INFO - Training completed successfully
+2025-02-14 17:24:59,777 - INFO - Using device: cuda
+2025-02-14 17:24:59,804 - INFO - Number of training samples: 1779
+2025-02-14 17:24:59,804 - INFO - Number of validation samples: 461
+2025-02-14 17:26:13,046 - INFO - Epoch 1/50:
+2025-02-14 17:26:13,047 - INFO - Train Loss: 3.249 | Train Acc: 4.67%
+2025-02-14 17:26:13,047 - INFO - Val Loss: 7.739 | Val Acc: 4.34%
+2025-02-14 17:26:13,197 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 17:26:13,197 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 17:28:58,366 - INFO - Using device: cuda
+2025-02-14 17:28:58,384 - INFO - Number of training samples: 1779
+2025-02-14 17:28:58,384 - INFO - Number of validation samples: 461
+2025-02-14 17:32:43,296 - INFO - Using device: cuda
+2025-02-14 17:33:37,317 - INFO - Using device: cuda
+2025-02-14 17:36:25,615 - INFO - Using device: cuda
+2025-02-14 17:37:13,252 - INFO - Using device: cuda
+2025-02-14 17:37:46,695 - INFO - Using device: cuda
+2025-02-14 17:38:22,460 - INFO - Using device: cuda
+2025-02-14 17:41:51,748 - INFO - Epoch 1/50:
+2025-02-14 17:41:51,750 - INFO - Train Loss: 1.466 | Train Acc: 53.10%
+2025-02-14 17:41:51,750 - INFO - Val Loss: 0.473 | Val Acc: 84.21%
+2025-02-14 17:41:51,909 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 17:41:51,909 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 17:45:13,902 - INFO - Epoch 2/50:
+2025-02-14 17:45:13,902 - INFO - Train Loss: 0.359 | Train Acc: 89.39%
+2025-02-14 17:45:13,902 - INFO - Val Loss: 0.117 | Val Acc: 96.45%
+2025-02-14 17:45:14,074 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 17:45:14,075 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 17:48:32,148 - INFO - Epoch 3/50:
+2025-02-14 17:48:32,150 - INFO - Train Loss: 0.176 | Train Acc: 94.95%
+2025-02-14 17:48:32,150 - INFO - Val Loss: 0.057 | Val Acc: 98.60%
+2025-02-14 17:48:32,305 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 17:48:32,305 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 17:52:09,978 - INFO - Epoch 4/50:
+2025-02-14 17:52:09,978 - INFO - Train Loss: 0.120 | Train Acc: 96.54%
+2025-02-14 17:52:09,978 - INFO - Val Loss: 0.020 | Val Acc: 99.44%
+2025-02-14 17:52:10,198 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 17:52:10,198 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 17:59:30,826 - INFO - Epoch 5/50:
+2025-02-14 17:59:30,827 - INFO - Train Loss: 0.091 | Train Acc: 97.41%
+2025-02-14 17:59:30,827 - INFO - Val Loss: 0.024 | Val Acc: 99.30%
+2025-02-14 18:03:21,462 - INFO - Epoch 6/50:
+2025-02-14 18:03:21,462 - INFO - Train Loss: 0.079 | Train Acc: 97.92%
+2025-02-14 18:03:21,462 - INFO - Val Loss: 0.020 | Val Acc: 99.41%
+2025-02-14 18:03:21,677 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 18:03:21,677 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 18:07:05,864 - INFO - Epoch 7/50:
+2025-02-14 18:07:05,866 - INFO - Train Loss: 0.065 | Train Acc: 98.20%
+2025-02-14 18:07:05,866 - INFO - Val Loss: 0.010 | Val Acc: 99.72%
+2025-02-14 18:07:06,078 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 18:07:06,078 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 18:11:03,606 - INFO - Epoch 8/50:
+2025-02-14 18:11:03,608 - INFO - Train Loss: 0.058 | Train Acc: 98.45%
+2025-02-14 18:11:03,608 - INFO - Val Loss: 0.012 | Val Acc: 99.60%
+2025-02-14 18:14:58,268 - INFO - Epoch 9/50:
+2025-02-14 18:14:58,269 - INFO - Train Loss: 0.055 | Train Acc: 98.47%
+2025-02-14 18:14:58,269 - INFO - Val Loss: 0.010 | Val Acc: 99.73%
+2025-02-14 18:18:46,580 - INFO - Epoch 10/50:
+2025-02-14 18:18:46,581 - INFO - Train Loss: 0.039 | Train Acc: 98.92%
+2025-02-14 18:18:46,581 - INFO - Val Loss: 0.004 | Val Acc: 99.90%
+2025-02-14 18:18:46,808 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 18:18:46,808 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 18:22:43,890 - INFO - Epoch 11/50:
+2025-02-14 18:22:43,890 - INFO - Train Loss: 0.045 | Train Acc: 98.71%
+2025-02-14 18:22:43,890 - INFO - Val Loss: 0.010 | Val Acc: 99.69%
+2025-02-14 18:26:37,068 - INFO - Epoch 12/50:
+2025-02-14 18:26:37,068 - INFO - Train Loss: 0.035 | Train Acc: 99.02%
+2025-02-14 18:26:37,069 - INFO - Val Loss: 0.004 | Val Acc: 99.89%
+2025-02-14 18:30:31,134 - INFO - Epoch 13/50:
+2025-02-14 18:30:31,134 - INFO - Train Loss: 0.035 | Train Acc: 98.93%
+2025-02-14 18:30:31,134 - INFO - Val Loss: 0.019 | Val Acc: 99.52%
+2025-02-14 18:34:21,226 - INFO - Epoch 14/50:
+2025-02-14 18:34:21,227 - INFO - Train Loss: 0.033 | Train Acc: 99.04%
+2025-02-14 18:34:21,227 - INFO - Val Loss: 0.005 | Val Acc: 99.87%
+2025-02-14 18:37:38,861 - INFO - Epoch 15/50:
+2025-02-14 18:37:38,861 - INFO - Train Loss: 0.014 | Train Acc: 99.58%
+2025-02-14 18:37:38,861 - INFO - Val Loss: 0.001 | Val Acc: 99.96%
+2025-02-14 18:37:39,007 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 18:37:39,007 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 18:40:54,288 - INFO - Epoch 16/50:
+2025-02-14 18:40:54,288 - INFO - Train Loss: 0.007 | Train Acc: 99.80%
+2025-02-14 18:40:54,289 - INFO - Val Loss: 0.001 | Val Acc: 99.98%
+2025-02-14 18:40:54,444 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 18:40:54,444 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 18:44:09,488 - INFO - Epoch 17/50:
+2025-02-14 18:44:09,488 - INFO - Train Loss: 0.006 | Train Acc: 99.81%
+2025-02-14 18:44:09,488 - INFO - Val Loss: 0.001 | Val Acc: 99.98%
+2025-02-14 18:44:09,650 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 18:44:09,650 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 18:47:24,676 - INFO - Epoch 18/50:
+2025-02-14 18:47:24,677 - INFO - Train Loss: 0.005 | Train Acc: 99.83%
+2025-02-14 18:47:24,677 - INFO - Val Loss: 0.000 | Val Acc: 100.00%
+2025-02-14 18:47:24,839 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 18:47:24,839 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 18:50:39,780 - INFO - Epoch 19/50:
+2025-02-14 18:50:39,782 - INFO - Train Loss: 0.005 | Train Acc: 99.88%
+2025-02-14 18:50:39,782 - INFO - Val Loss: 0.000 | Val Acc: 100.00%
+2025-02-14 18:50:39,931 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 18:50:39,933 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 18:53:54,659 - INFO - Epoch 20/50:
+2025-02-14 18:53:54,661 - INFO - Train Loss: 0.004 | Train Acc: 99.90%
+2025-02-14 18:53:54,661 - INFO - Val Loss: 0.000 | Val Acc: 100.00%
+2025-02-14 18:53:54,814 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 18:53:54,815 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 18:57:10,567 - INFO - Epoch 21/50:
+2025-02-14 18:57:10,569 - INFO - Train Loss: 0.002 | Train Acc: 99.94%
+2025-02-14 18:57:10,569 - INFO - Val Loss: 0.000 | Val Acc: 100.00%
+2025-02-14 18:57:10,712 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 18:57:10,712 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 19:00:26,261 - INFO - Epoch 22/50:
+2025-02-14 19:00:26,261 - INFO - Train Loss: 0.002 | Train Acc: 99.93%
+2025-02-14 19:00:26,262 - INFO - Val Loss: 0.000 | Val Acc: 100.00%
+2025-02-14 19:00:26,421 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 19:00:26,421 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 19:03:48,995 - INFO - Epoch 23/50:
+2025-02-14 19:03:48,995 - INFO - Train Loss: 0.003 | Train Acc: 99.90%
+2025-02-14 19:03:48,995 - INFO - Val Loss: 0.000 | Val Acc: 100.00%
+2025-02-14 19:03:49,158 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 19:03:49,158 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 19:07:11,497 - INFO - Epoch 24/50:
+2025-02-14 19:07:11,497 - INFO - Train Loss: 0.002 | Train Acc: 99.93%
+2025-02-14 19:07:11,498 - INFO - Val Loss: 0.000 | Val Acc: 100.00%
+2025-02-14 19:07:11,655 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 19:07:11,656 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 19:10:33,938 - INFO - Epoch 25/50:
+2025-02-14 19:10:33,938 - INFO - Train Loss: 0.003 | Train Acc: 99.92%
+2025-02-14 19:10:33,939 - INFO - Val Loss: 0.000 | Val Acc: 100.00%
+2025-02-14 19:13:56,106 - INFO - Epoch 26/50:
+2025-02-14 19:13:56,108 - INFO - Train Loss: 0.002 | Train Acc: 99.96%
+2025-02-14 19:13:56,108 - INFO - Val Loss: 0.000 | Val Acc: 100.00%
+2025-02-14 19:17:18,342 - INFO - Epoch 27/50:
+2025-02-14 19:17:18,343 - INFO - Train Loss: 0.002 | Train Acc: 99.92%
+2025-02-14 19:17:18,343 - INFO - Val Loss: 0.000 | Val Acc: 100.00%
+2025-02-14 19:20:40,448 - INFO - Epoch 28/50:
+2025-02-14 19:20:40,448 - INFO - Train Loss: 0.002 | Train Acc: 99.94%
+2025-02-14 19:20:40,448 - INFO - Val Loss: 0.000 | Val Acc: 100.00%
+2025-02-14 19:20:40,612 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 19:20:40,612 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 19:24:02,802 - INFO - Epoch 29/50:
+2025-02-14 19:24:02,804 - INFO - Train Loss: 0.002 | Train Acc: 99.93%
+2025-02-14 19:24:02,804 - INFO - Val Loss: 0.000 | Val Acc: 100.00%
+2025-02-14 19:24:02,960 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 19:24:02,960 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 19:27:25,188 - INFO - Epoch 30/50:
+2025-02-14 19:27:25,188 - INFO - Train Loss: 0.001 | Train Acc: 99.97%
+2025-02-14 19:27:25,189 - INFO - Val Loss: 0.000 | Val Acc: 100.00%
+2025-02-14 19:27:25,346 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 19:27:25,348 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 19:30:47,455 - INFO - Epoch 31/50:
+2025-02-14 19:30:47,458 - INFO - Train Loss: 0.001 | Train Acc: 99.98%
+2025-02-14 19:30:47,458 - INFO - Val Loss: 0.000 | Val Acc: 100.00%
+2025-02-14 19:30:47,615 - INFO - Checkpoint saved successfully to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 19:30:47,615 - INFO - Saved best model to d:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-14 19:34:09,742 - INFO - Epoch 32/50:
+2025-02-14 19:34:09,743 - INFO - Train Loss: 0.002 | Train Acc: 99.94%
+2025-02-14 19:34:09,743 - INFO - Val Loss: 0.000 | Val Acc: 100.00%
+2025-02-14 19:37:31,880 - INFO - Epoch 33/50:
+2025-02-14 19:37:31,880 - INFO - Train Loss: 0.002 | Train Acc: 99.94%
+2025-02-14 19:37:31,880 - INFO - Val Loss: 0.000 | Val Acc: 100.00%
+2025-02-14 19:40:53,930 - INFO - Epoch 34/50:
+2025-02-14 19:40:53,930 - INFO - Train Loss: 0.003 | Train Acc: 99.92%
+2025-02-14 19:40:53,930 - INFO - Val Loss: 0.000 | Val Acc: 100.00%
+2025-02-14 19:44:15,995 - INFO - Epoch 35/50:
+2025-02-14 19:44:15,997 - INFO - Train Loss: 0.002 | Train Acc: 99.93%
+2025-02-14 19:44:15,997 - INFO - Val Loss: 0.000 | Val Acc: 100.00%
+2025-02-14 19:47:38,140 - INFO - Epoch 36/50:
+2025-02-14 19:47:38,140 - INFO - Train Loss: 0.001 | Train Acc: 99.97%
+2025-02-14 19:47:38,140 - INFO - Val Loss: 0.000 | Val Acc: 100.00%
+2025-02-14 19:47:38,140 - INFO - Early stopping triggered
+2025-02-14 19:47:38,145 - INFO - Training completed successfully

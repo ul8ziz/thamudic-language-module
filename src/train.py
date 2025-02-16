@@ -5,7 +5,7 @@ Training script for Thamudic character recognition model
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
 import os
 from pathlib import Path
@@ -129,8 +129,6 @@ def main():
     # Setup directories
     base_dir = Path(__file__).parent.parent
     data_dir = base_dir / 'data' / 'letters'
-    train_dir = data_dir / 'train'
-    val_dir = data_dir / 'val'
     save_dir = base_dir / 'models' / 'checkpoints'
     log_dir = base_dir / 'runs'
     
@@ -142,86 +140,52 @@ def main():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     logging.info(f'Using device: {device}')
     
-    # Data augmentation and normalization
-    train_transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomRotation(10),
-        transforms.RandomAffine(0, translate=(0.1, 0.1)),
-        transforms.ColorJitter(brightness=0.2, contrast=0.2),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                           std=[0.229, 0.224, 0.225])
-    ])
-    
-    val_transform = transforms.Compose([
+    # إعداد التحويلات
+    transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                           std=[0.229, 0.224, 0.225])
     ])
-    
-    try:
-        # Load datasets
-        train_dataset = ThamudicDataset(train_dir, transform=train_transform)
-        val_dataset = ThamudicDataset(val_dir, transform=val_transform)
-        
-        logging.info(f'Number of training samples: {len(train_dataset)}')
-        logging.info(f'Number of validation samples: {len(val_dataset)}')
-        
-        # Create data loaders
-        train_loader = DataLoader(
-            train_dataset,
-            batch_size=32,
-            shuffle=True,
-            num_workers=4,
-            pin_memory=True
-        )
-        
-        val_loader = DataLoader(
-            val_dataset,
-            batch_size=32,
-            shuffle=False,
-            num_workers=4,
-            pin_memory=True
-        )
-        
-        # Initialize model
-        model = ThamudicRecognitionModel(num_classes=len(train_dataset.classes))
-        model = model.to(device)
-        
-        # Loss function with class weights
-        criterion = nn.CrossEntropyLoss(weight=train_dataset.class_weights.to(device))
-        
-        # Optimizer and scheduler
-        optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.01)
-        scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer, mode='min', factor=0.1, patience=3, verbose=True
-        )
-        
-        # Initialize TensorBoard writer
-        writer = SummaryWriter(log_dir)
-        
-        # Train the model
-        train_model(
-            model=model,
-            train_loader=train_loader,
-            val_loader=val_loader,
-            criterion=criterion,
-            optimizer=optimizer,
-            scheduler=scheduler,
-            num_epochs=50,
-            device=device,
-            save_dir=save_dir,
-            writer=writer
-        )
-        
-        writer.close()
-        logging.info('Training completed successfully')
-        
-    except Exception as e:
-        logging.error(f'Error during training: {str(e)}')
-        raise
 
+    # تحميل مجموعة البيانات
+    train_dataset = ThamudicDataset(data_dir, transform=transform)
+    val_dataset = ThamudicDataset(data_dir, transform=transform)
+    
+    # إنشاء DataLoader
+    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
+    
+    # Initialize model
+    model = ThamudicRecognitionModel(num_classes=len(train_dataset.classes))
+    model = model.to(device)
+    
+    # Loss function with class weights
+    criterion = nn.CrossEntropyLoss(weight=train_dataset.class_weights.to(device))
+    
+    # Optimizer and scheduler
+    optimizer = optim.AdamW(model.parameters(), lr=0.001, weight_decay=0.01)
+    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer, mode='min', factor=0.1, patience=3, verbose=True
+    )
+    
+    # Initialize TensorBoard writer
+    writer = SummaryWriter(log_dir)
+    
+    # Train the model
+    train_model(
+        model=model,
+        train_loader=train_loader,
+        val_loader=val_loader,
+        criterion=criterion,
+        optimizer=optimizer,
+        scheduler=scheduler,
+        num_epochs=50,
+        device=device,
+        save_dir=save_dir,
+        writer=writer
+    )
+    
+    writer.close()
+    logging.info('Training completed successfully')
+    
 if __name__ == '__main__':
     main()

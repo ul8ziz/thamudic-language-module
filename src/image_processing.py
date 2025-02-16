@@ -194,12 +194,12 @@ class ThamudicInferenceEngine:
             label_mapping_path: مسار ملف تعيين التسميات
         """
         # تحميل النموذج
-        self.model = torch.load(model_path, map_location=torch.device('cpu'))
+        self.model = torch.load(model_path, map_location=torch.device('cpu'),weights_only=False)
         self.model.eval()
         
         self.preprocessor = ThamudicImagePreprocessor()
         
-        # تحميل تعيينات التسميات
+        # تحميل تعيينات التسميات        
         with open(label_mapping_path, 'r', encoding='utf-8') as f:
             self.label_mapping = json.load(f)
 

@@ -53,7 +53,11 @@ class ThamudicDataset(Dataset):
         class_counts = np.zeros(len(self.classes))
         for _, label in self.samples:
             class_counts[label] += 1
-        return torch.FloatTensor(1.0 / class_counts)
+        
+        # تجنب القسمة على صفر
+        class_weights = 1.0 / class_counts
+        class_weights[class_counts == 0] = 0  # تعيين 0 للأوزان التي كانت ستؤدي إلى قسمة على صفر
+        return torch.FloatTensor(class_weights)
     
     def __len__(self):
         return len(self.samples)

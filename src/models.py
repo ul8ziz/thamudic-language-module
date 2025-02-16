@@ -7,6 +7,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import logging
 from pathlib import Path
+from torch.optim import AdamW
 
 class SEBlock(nn.Module):
     """Squeeze-and-Excitation block"""
@@ -145,12 +146,60 @@ class ThamudicRecognitionModel(nn.Module):
             raise
     
     def load_checkpoint(self, checkpoint_path):
-        """Load model checkpoint and return metadata"""
+        """Load model checkpoint and return metadata with partial loading support"""
         try:
-            checkpoint = torch.load(checkpoint_path, map_location=torch.device('cpu'))
-            self.load_state_dict(checkpoint['model_state_dict'])
+            # Use a context manager for safe loading
+            with torch.serialization.safe_globals([AdamW]):
+                checkpoint = torch.load(checkpoint_path, 
+                                     map_location=torch.device('cpu'),
+                                     weights_only=False)
+            
+            # Determine checkpoint state dict
+            if isinstance(checkpoint, dict) and 'model_state_dict' in checkpoint:
+                state_dict = checkpoint['model_state_dict']
+                metadata = checkpoint.get('metadata', {})
+            else:
+                state_dict = checkpoint
+                metadata = {}
+            
+            # Get current model's state dict
+            model_state_dict = self.state_dict()
+            
+            # Create a new state dict for loading
+            new_state_dict = model_state_dict.copy()
+            
+            # Partially load state dict, handling class number mismatch
+            for name, param in state_dict.items():
+                if name in model_state_dict:
+                    # Handle final layer mismatch
+                    if 'fc.4' in name:  # Last layer weights/bias
+                        current_shape = model_state_dict[name].shape
+                        checkpoint_shape = param.shape
+                        
+                        if current_shape != checkpoint_shape:
+                            logging.warning(f"Mismatch in {name}: checkpoint shape {checkpoint_shape}, current model shape {current_shape}")
+                            
+                            # For weights
+                            if len(current_shape) == 2 and len(checkpoint_shape) == 2:
+                                min_classes = min(current_shape[0], checkpoint_shape[0])
+                                new_state_dict[name][:min_classes, :] = param[:min_classes, :]
+                            
+                            # For biases
+                            elif len(current_shape) == 1 and len(checkpoint_shape) == 1:
+                                min_classes = min(current_shape[0], checkpoint_shape[0])
+                                new_state_dict[name][:min_classes] = param[:min_classes]
+                            
+                            continue
+                    
+                    # Load other parameters normally
+                    new_state_dict[name] = param
+            
+            # Load the modified state dict
+            self.load_state_dict(new_state_dict, strict=False)
+            
             logging.info(f"Checkpoint loaded successfully from {checkpoint_path}")
-            return checkpoint.get('metadata', {})
+            return metadata
+        
         except Exception as e:
             logging.error(f"Error loading checkpoint: {str(e)}")
             raise
