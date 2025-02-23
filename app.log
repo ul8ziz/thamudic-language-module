@@ -475,3 +475,19 @@ Check the documentation of torch.load to learn more about types accepted by defa
 2025-02-16 14:11:34,751 - INFO - Model loaded successfully from D:\GitHub\Rizq\thamudic-language-module\models\checkpoints\best_model.pt
 2025-02-16 14:11:41,088 - INFO - Checkpoint loaded successfully from D:\GitHub\Rizq\thamudic-language-module\models\checkpoints\best_model.pt
 2025-02-16 14:11:41,092 - INFO - Model loaded successfully from D:\GitHub\Rizq\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-22 23:32:11,519 - WARNING - Mismatch in fc.4.weight: checkpoint shape torch.Size([27, 256]), current model shape torch.Size([28, 256])
+2025-02-22 23:32:11,523 - WARNING - Mismatch in fc.4.bias: checkpoint shape torch.Size([27]), current model shape torch.Size([28])
+2025-02-22 23:32:11,551 - INFO - Checkpoint loaded successfully from D:\GitHub\Rizq\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-22 23:32:11,556 - INFO - Model loaded successfully from D:\GitHub\Rizq\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-22 23:32:20,946 - WARNING - Mismatch in fc.4.weight: checkpoint shape torch.Size([27, 256]), current model shape torch.Size([28, 256])
+2025-02-22 23:32:20,946 - WARNING - Mismatch in fc.4.bias: checkpoint shape torch.Size([27]), current model shape torch.Size([28])
+2025-02-22 23:32:20,980 - INFO - Checkpoint loaded successfully from D:\GitHub\Rizq\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-22 23:32:20,986 - INFO - Model loaded successfully from D:\GitHub\Rizq\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-23 00:11:58,246 - WARNING - Mismatch in fc.4.weight: checkpoint shape torch.Size([27, 256]), current model shape torch.Size([28, 256])
+2025-02-23 00:11:58,246 - WARNING - Mismatch in fc.4.bias: checkpoint shape torch.Size([27]), current model shape torch.Size([28])
+2025-02-23 00:11:58,276 - INFO - Checkpoint loaded successfully from D:\GitHub\Rizq\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-23 00:11:58,282 - INFO - Model loaded successfully from D:\GitHub\Rizq\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-23 00:12:02,242 - WARNING - Mismatch in fc.4.weight: checkpoint shape torch.Size([27, 256]), current model shape torch.Size([28, 256])
+2025-02-23 00:12:02,243 - WARNING - Mismatch in fc.4.bias: checkpoint shape torch.Size([27]), current model shape torch.Size([28])
+2025-02-23 00:12:02,262 - INFO - Checkpoint loaded successfully from D:\GitHub\Rizq\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-23 00:12:02,266 - INFO - Model loaded successfully from D:\GitHub\Rizq\thamudic-language-module\models\checkpoints\best_model.pt

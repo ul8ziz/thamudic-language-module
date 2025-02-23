@@ -10,6 +10,7 @@ from PIL import Image
 import numpy as np
 from pathlib import Path
 import logging
+import json
 from typing import Tuple
 
 # Configuration
@@ -27,7 +28,13 @@ class ThamudicDataset(Dataset):
     def __init__(self, root_dir: str, transform=None):
         self.root_dir = Path(root_dir)
         self.transform = transform
-        self.classes = sorted([d for d in os.listdir(root_dir) if d.startswith('letter_')])
+        
+        # Load letter mapping to ensure correct order
+        mapping_path = self.root_dir.parent / 'letter_mapping.json'
+        with open(mapping_path, 'r', encoding='utf-8') as f:
+            mapping_data = json.load(f)
+            self.classes = [f"letter_{item['letter']}" for item in mapping_data['thamudic_letters']]
+        
         self.class_to_idx = {cls: idx for idx, cls in enumerate(self.classes)}
         self.samples = self._load_samples()
         
@@ -49,30 +56,47 @@ class ThamudicDataset(Dataset):
         return samples
     
     def _calculate_class_weights(self):
-        """Calculate class weights to handle imbalanced data"""
-        class_counts = np.zeros(len(self.classes))
-        for _, label in self.samples:
-            class_counts[label] += 1
+        """Calculate class weights to handle imbalanced dataset"""
+        class_counts = {}
+        total_samples = len(self.samples)
         
-        # تجنب القسمة على صفر
-        class_weights = 1.0 / class_counts
-        class_weights[class_counts == 0] = 0  # تعيين 0 للأوزان التي كانت ستؤدي إلى قسمة على صفر
-        return torch.FloatTensor(class_weights)
+        # Count samples per class
+        for _, class_idx in self.samples:
+            class_counts[class_idx] = class_counts.get(class_idx, 0) + 1
+        
+        # Calculate weights
+        weights = torch.zeros(len(self.classes))
+        for class_idx, count in class_counts.items():
+            weights[class_idx] = total_samples / (len(self.classes) * count)
+        
+        return weights
     
     def __len__(self):
         return len(self.samples)
     
     def __getitem__(self, idx):
-        img_path, label = self.samples[idx]
+        """Get a sample from the dataset"""
+        img_path, class_idx = self.samples[idx]
+        
         try:
-            image = Image.open(img_path).convert('RGB')
-            if self.transform:
-                image = self.transform(image)
-            return image, label
+            # Load and convert image
+            with Image.open(img_path).convert('RGB') as img:
+                # Apply transformations
+                if self.transform:
+                    img = self.transform(img)
+                else:
+                    # Default transformations if none provided
+                    default_transform = transforms.Compose([
+                        transforms.Resize((224, 224)),
+                        transforms.ToTensor(),
+                    ])
+                    img = default_transform(img)
+                
+                return img, class_idx
         except Exception as e:
             logging.error(f"Error loading image {img_path}: {str(e)}")
-            # Return a default image or skip
-            raise
+            # Return a blank image in case of error
+            return torch.zeros((3, 224, 224)), class_idx
 
 def create_data_loaders(
     data_dir: str,
