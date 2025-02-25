@@ -135,6 +135,10 @@ def main():
     if torch.cuda.is_available():
         torch.cuda.manual_seed(42)
     
+    # Check if GPU is available and set the device
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    logging.info(f'Using device: {device}')
+    
     # Setup directories
     base_dir = Path(__file__).parent.parent
     data_dir = base_dir / 'data' / 'letters'
@@ -144,10 +148,6 @@ def main():
     # Create directories if they don't exist
     save_dir.mkdir(parents=True, exist_ok=True)
     log_dir.mkdir(parents=True, exist_ok=True)
-    
-    # Setup device
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    logging.info(f'Using device: {device}')
     
     # تحسين التحويلات لزيادة تنوع البيانات
     transform_train = transforms.Compose([
@@ -204,8 +204,7 @@ def main():
     )
     
     # تهيئة النموذج
-    model = ThamudicRecognitionModel(num_classes=len(train_dataset.classes))
-    model = model.to(device)
+    model = ThamudicRecognitionModel(num_classes=len(train_dataset.classes)).to(device)
     
     # دالة الخسارة مع أوزان الفئات
     criterion = nn.CrossEntropyLoss(weight=train_dataset.class_weights.to(device))

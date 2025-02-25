@@ -491,3 +491,34 @@ Check the documentation of torch.load to learn more about types accepted by defa
 2025-02-23 00:12:02,243 - WARNING - Mismatch in fc.4.bias: checkpoint shape torch.Size([27]), current model shape torch.Size([28])
 2025-02-23 00:12:02,262 - INFO - Checkpoint loaded successfully from D:\GitHub\Rizq\thamudic-language-module\models\checkpoints\best_model.pt
 2025-02-23 00:12:02,266 - INFO - Model loaded successfully from D:\GitHub\Rizq\thamudic-language-module\models\checkpoints\best_model.pt
+2025-02-25 14:41:12,504 - ERROR - Error loading checkpoint: [Errno 2] No such file or directory: 'D:\\ul8ziz\\GitHub\\thamudic-language-module\\models\\checkpoints\\best_model.pt'
+2025-02-25 14:41:12,506 - ERROR - Error loading model: [Errno 2] No such file or directory: 'D:\\ul8ziz\\GitHub\\thamudic-language-module\\models\\checkpoints\\best_model.pt'
+2025-02-25 14:41:12,506 - ERROR - Error in application: [Errno 2] No such file or directory: 'D:\\ul8ziz\\GitHub\\thamudic-language-module\\models\\checkpoints\\best_model.pt'
+2025-02-25 14:42:36,569 - INFO - Checkpoint loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-02-25 14:42:36,573 - INFO - Model loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-02-25 14:42:48,083 - INFO - Checkpoint loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-02-25 14:42:48,085 - INFO - Model loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-02-25 14:44:36,151 - INFO - Checkpoint loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-02-25 14:44:36,155 - INFO - Model loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-02-25 14:46:10,140 - INFO - Checkpoint loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-02-25 14:46:10,143 - INFO - Model loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-02-25 14:46:16,302 - INFO - Checkpoint loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-02-25 14:46:16,302 - INFO - Model loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-02-25 14:46:16,330 - ERROR - Error making prediction: OpenCV(4.7.0) d:\a\opencv-python\opencv-python\opencv\modules\imgproc\src\color.simd_helpers.hpp:92: error: (-2:Unspecified error) in function '__cdecl cv::impl::`anonymous-namespace'::CvtHelper<struct cv::impl::`anonymous namespace'::Set<3,4,-1>,struct cv::impl::A0x981fb336::Set<1,-1,-1>,struct cv::impl::A0x981fb336::Set<0,2,5>,2>::CvtHelper(const class cv::_InputArray &,const class cv::_OutputArray &,int)'
+> Invalid number of channels in input image:
+>     'VScn::contains(scn)'
+> where
+>     'scn' is 1
+
+2025-02-25 14:46:16,333 - ERROR - Error in application: OpenCV(4.7.0) d:\a\opencv-python\opencv-python\opencv\modules\imgproc\src\color.simd_helpers.hpp:92: error: (-2:Unspecified error) in function '__cdecl cv::impl::`anonymous-namespace'::CvtHelper<struct cv::impl::`anonymous namespace'::Set<3,4,-1>,struct cv::impl::A0x981fb336::Set<1,-1,-1>,struct cv::impl::A0x981fb336::Set<0,2,5>,2>::CvtHelper(const class cv::_InputArray &,const class cv::_OutputArray &,int)'
+> Invalid number of channels in input image:
+>     'VScn::contains(scn)'
+> where
+>     'scn' is 1
+
+2025-02-25 14:46:35,320 - INFO - Checkpoint loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-02-25 14:46:35,321 - INFO - Model loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-02-25 14:51:28,574 - INFO - Checkpoint loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-02-25 14:51:28,579 - INFO - Model loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-02-25 14:51:47,458 - INFO - Checkpoint loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-02-25 14:51:47,460 - INFO - Model loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth

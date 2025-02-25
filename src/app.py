@@ -286,7 +286,7 @@ def main():
     try:
         # Initialize paths
         base_dir = Path(__file__).parent.parent
-        model_path = base_dir / 'models' / 'checkpoints' / 'best_model.pt'
+        model_path = base_dir / 'models' / 'checkpoints' / 'best_model.pth'
         mapping_path = base_dir / 'data' / 'letter_mapping.json'
         
         # Initialize the application
