@@ -113,16 +113,15 @@ class ThamudicApp:
         width, height = image.size
         
         for box, prediction in zip(boxes, predictions):
-            # استخدم إحداثيات كل حرف لرسم المربع
             x, y, w, h = box
             box_left = x
             box_right = x + w
             box_top = y
             box_bottom = y + h
             
-            # رسم المربع الأخضر
+            # Draw a thinner green box
             box_color = (0, 255, 0)  # Green color
-            box_width = max(2, min(width, height) // 200)  # تقليل سمك الخط
+            box_width = 1  # Thinner line
             draw.rectangle(
                 [(box_left, box_top), (box_right, box_bottom)],
                 outline=box_color,
@@ -130,34 +129,29 @@ class ThamudicApp:
             )
             
             try:
-                # إضافة الحرف العربي بدون خلفية
-                font_size = min(box_right - box_left, height) // 4  # زيادة حجم الخط أكثر
+                # Add the Arabic letter with adjusted position
+                font_size = min(h, w) // 2  # Adjusted font size
                 font_path = str(Path(__file__).parent / 'assets' / 'fonts' / 'NotoSansArabic-Regular.ttf')
                 if os.path.exists(font_path):
                     font = ImageFont.truetype(font_path, font_size)
                 else:
                     font = ImageFont.load_default()
                 
-                # حساب موقع النص
+                # Calculate text position
                 text = self.letter_mapping[prediction]['letter']
                 text_bbox = draw.textbbox((0, 0), text, font=font)
                 text_width = text_bbox[2] - text_bbox[0]
                 text_height = text_bbox[3] - text_bbox[1]
                 
-                # وضع النص في وسط المربع
-                text_x = box_left + (box_right - box_left - text_width) // 2
-                text_y = box_top - text_height - 10  # إضافة مسافة صغيرة فوق المربع
+                # Center text above the box
+                text_x = box_left + (w - text_width) // 2
+                text_y = box_top - text_height - 5  # Small gap above box
                 
-                # رسم النص بخط أسود بدون خلفية
-                draw.text(
-                    (text_x, text_y),
-                    text,
-                    font=font,
-                    fill=(0, 0, 0)  # لون النص أسود
-                )
-                
+                # Draw text
+                draw.text((text_x, text_y), text, fill=(0, 0, 0), font=font)
             except Exception as e:
                 logging.error(f"Error drawing text: {str(e)}")
+                continue
         
         return result_image 
 
@@ -165,38 +159,92 @@ class ThamudicApp:
                 contrast: float = 2.0,
                 brightness: float = 1.2,
                 sharpness: float = 1.5,
-                num_predictions: int = 5) -> tuple:
+                num_predictions: int = 5,
+                image_type: str = 'white_background'):  
         """
         Make prediction on the preprocessed image
+        
+        Args:
+            image: Input image
+            contrast: Contrast adjustment
+            brightness: Brightness adjustment
+            sharpness: Sharpness adjustment
+            num_predictions: Number of predictions to return
+            image_type: Type of image processing to apply:
+                       'white_background': For clean images with white background
+                       'dark_background': For images with dark background
+                       'inscription': For inscription/rock carving images
         """
         try:
-            # Convert image to numpy array
-            image_np = np.array(image)
-            
             # Convert to grayscale
-            gray = cv2.cvtColor(image_np, cv2.COLOR_RGB2GRAY)
+            gray_image = image.convert('L')
             
-            # Enhance contrast
-            clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
-            enhanced = clahe.apply(gray)
+            if image_type == 'white_background':
+                # Process images with white background
+                enhanced = ImageEnhance.Contrast(gray_image).enhance(contrast)
+                enhanced = ImageEnhance.Brightness(enhanced).enhance(brightness)
+                enhanced = ImageEnhance.Sharpness(enhanced).enhance(sharpness)
+                
+                img_array = np.array(enhanced)
+                _, binary = cv2.threshold(img_array, 127, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+                
+                kernel = np.ones((2,2), np.uint8)
+                binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
+                
+                # Invert the image to make letters white
+                binary = 255 - binary
+                
+            elif image_type == 'dark_background':
+                # Process images with dark background
+                enhanced = ImageEnhance.Contrast(gray_image).enhance(contrast * 1.5)
+                enhanced = ImageEnhance.Brightness(enhanced).enhance(brightness * 1.3)
+                
+                img_array = np.array(enhanced)
+                # Use adaptive thresholding for dark backgrounds
+                binary = cv2.adaptiveThreshold(
+                    img_array, 255,
+                    cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                    cv2.THRESH_BINARY,
+                    21, 10
+                )
+                
+                kernel = np.ones((3,3), np.uint8)
+                binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+                binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
+                
+            else:  # image_type == 'inscription'
+                # Process inscription images
+                # Apply local contrast enhancement
+                clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
+                enhanced = clahe.apply(np.array(gray_image))
+                
+                # Apply a filter to reduce noise
+                enhanced = cv2.GaussianBlur(enhanced, (3,3), 0)
+                
+                # Use adaptive thresholding with custom values for inscriptions
+                binary = cv2.adaptiveThreshold(
+                    enhanced, 255,
+                    cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                    cv2.THRESH_BINARY,
+                    25, 15
+                )
+                
+                # Apply morphological operations to clean the image
+                kernel = np.ones((3,3), np.uint8)
+                binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
+                binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
+                
+                # Apply an additional filter to smooth edges
+                binary = cv2.medianBlur(binary, 3)
             
-            # Apply adaptive threshold
-            binary = cv2.adaptiveThreshold(
-                enhanced, 255, 
-                cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-                cv2.THRESH_BINARY_INV, 11, 2
-            )
+            # Find connected components with adjusted connectivity
+            connectivity = 4 if image_type == 'white_background' else 8
+            num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary, connectivity=connectivity)
             
-            # Morphological operations
-            kernel = np.ones((3,3), np.uint8)
-            binary = cv2.morphologyEx(binary, cv2.MORPH_CLOSE, kernel)
-            binary = cv2.morphologyEx(binary, cv2.MORPH_OPEN, kernel)
-            
-            # Find connected components
-            num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(binary, connectivity=8)
-            
-            # Ignore background (component 0)
             boxes = []
+            valid_components = []
+            
+            # Adjust filtering criteria based on image type
             for i in range(1, num_labels):
                 x = stats[i, cv2.CC_STAT_LEFT]
                 y = stats[i, cv2.CC_STAT_TOP]
@@ -204,31 +252,71 @@ class ThamudicApp:
                 h = stats[i, cv2.CC_STAT_HEIGHT]
                 area = stats[i, cv2.CC_STAT_AREA]
                 
-                # Ignore very small or very large components
-                min_area = 100
-                max_area = (image.size[0] * image.size[1]) / 8
-                if min_area < area < max_area:
-                    # Add margin around letter
+                # Adjust criteria based on image type
+                if image_type == 'white_background':
+                    min_area = 50
+                    max_area = (image.size[0] * image.size[1]) / 6
+                    min_aspect = 0.1
+                    max_aspect = 10
+                    min_density = 0.05
+                    max_density = 0.95
+                    margin = 3
+                elif image_type == 'dark_background':
+                    min_area = 40
+                    max_area = (image.size[0] * image.size[1]) / 5
+                    min_aspect = 0.08
+                    max_aspect = 12
+                    min_density = 0.03
+                    max_density = 0.97
+                    margin = 4
+                else:  # inscription
+                    min_area = 30
+                    max_area = (image.size[0] * image.size[1]) / 4
+                    min_aspect = 0.05
+                    max_aspect = 15
+                    min_density = 0.02
+                    max_density = 0.98
                     margin = 5
-                    x = max(0, x - margin)
-                    y = max(0, y - margin)
-                    w = min(image.size[0] - x, w + 2 * margin)
-                    h = min(image.size[1] - y, h + 2 * margin)
-                    boxes.append((x, y, w, h))
+                
+                aspect_ratio = w / h if h > 0 else 0
+                
+                if (min_area < area < max_area and 
+                    min_aspect < aspect_ratio < max_aspect):
+                    
+                    component_mask = (labels == i).astype(np.uint8)
+                    black_pixels = np.sum(component_mask)
+                    density = black_pixels / (w * h)
+                    
+                    if min_density < density < max_density:
+                        x = max(0, x - margin)
+                        y = max(0, y - margin)
+                        w = min(image.size[0] - x, w + 2 * margin)
+                        h = min(image.size[1] - y, h + 2 * margin)
+                        boxes.append((x, y, w, h))
+                        valid_components.append(i)
             
-            # Sort boxes from left to right
-            boxes.sort(key=lambda box: box[0])
+            # Sort boxes from right to left
+            boxes.sort(key=lambda box: -(box[0] + box[2]))
             
             # Prepare letter images for prediction
             letter_images = []
+            final_boxes = []
             for box in boxes:
                 x, y, w, h = box
                 letter_image = image.crop((x, y, x+w, y+h))
                 letter_images.append(letter_image)
+                final_boxes.append(box)
+            
+            # Adjust confidence threshold based on image type
+            confidence_threshold = {
+                'white_background': 0.4,
+                'dark_background': 0.35,
+                'inscription': 0.3
+            }.get(image_type, 0.4)
             
             # Predict letters
             predictions = []
-            confidences = []  # Explicitly define confidences list
+            confidences = []
             for letter_image in letter_images:
                 processed_image = self.preprocess_image(letter_image)
                 
@@ -236,13 +324,28 @@ class ThamudicApp:
                     outputs = self.model(processed_image)
                     probabilities = torch.softmax(outputs, dim=1)
                     confidence, prediction = torch.max(probabilities, 1)
-                    predictions.append(prediction.item())
-                    confidences.append(confidence.item())
+                    
+                    if confidence.item() > confidence_threshold:
+                        predictions.append(prediction.item())
+                        confidences.append(confidence.item())
+                    else:
+                        predictions.append(-1)
+                        confidences.append(0.0)
+            
+            # Filter out low-confidence predictions
+            final_predictions = []
+            final_confidences = []
+            filtered_boxes = []
+            for pred, conf, box in zip(predictions, confidences, final_boxes):
+                if pred != -1:
+                    final_predictions.append(pred)
+                    final_confidences.append(conf)
+                    filtered_boxes.append(box)
             
             # Draw result on image
-            result_image = self.draw_result_on_image(image, boxes, predictions)
+            result_image = self.draw_result_on_image(image, filtered_boxes, final_predictions)
             
-            return predictions, confidences, result_image
+            return final_predictions, final_confidences, result_image
             
         except Exception as e:
             logging.error(f"Error making prediction: {str(e)}")
@@ -293,73 +396,86 @@ def main():
         app = ThamudicApp(str(model_path), str(mapping_path))
         st.success("Model loaded successfully!")
         
-        # Image processing settings
-        with st.expander("⚙️ Image Processing Settings"):
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                contrast = st.slider("Contrast", 0.5, 3.0, 2.0, 0.1)
-            with col2:
-                sharpness = st.slider("Sharpness", 0.5, 3.0, 1.5, 0.1)
-            with col3:
-                brightness = st.slider("Brightness", 0.5, 2.0, 1.2, 0.1)
+        # Create two columns: left for settings, right for results
+        col_settings, col_results = st.columns([1, 2])
         
-        # Upload image
-        uploaded_file = st.file_uploader(
-            "Choose an image for analysis",
-            type=['png', 'jpg', 'jpeg']
-        )
-        
-        if uploaded_file is not None:
-            col1, col2 = st.columns(2)
+        with col_settings:
+            st.subheader("⚙️ Recognition Settings")
+            # إضافة اختيار نوع الصورة
+            image_type = st.selectbox(
+                "نوع الصورة",
+                options=['white_background', 'dark_background', 'inscription'],
+                format_func=lambda x: {
+                    'white_background': 'خلفية بيضاء (صور نظيفة)',
+                    'dark_background': 'خلفية سوداء',
+                    'inscription': 'نقوش صخرية'
+                }[x]
+            )
             
-            with col1:
-                st.subheader("Uploaded Image")
+            # Image processing settings
+            contrast = st.slider("Contrast", 0.5, 3.0, 2.0, 0.1)
+            brightness = st.slider("Brightness", 0.5, 3.0, 1.2, 0.1)
+            sharpness = st.slider("Sharpness", 0.5, 3.0, 1.5, 0.1)
+        
+        with col_results:
+            st.subheader("Recognition Results")
+            # File uploader
+            uploaded_file = st.file_uploader("Choose an image...", type=['png', 'jpg', 'jpeg'])
+            
+            # Create placeholder for image and results
+            image_placeholder = st.empty()
+            letters_container = st.container()
+            
+            if uploaded_file is not None:
+                # Read the image
                 image = Image.open(uploaded_file)
-                st.image(image, caption="Original Image")
-            
-            with col2:
-                st.subheader("Analysis Results")
-                with st.spinner('Analyzing image...'):
+                
+                # Process image automatically
+                with st.spinner('Processing...'):
+                    # Make prediction
                     predictions, confidences, result_image = app.predict(
                         image,
                         contrast=contrast,
                         brightness=brightness,
-                        sharpness=sharpness
+                        sharpness=sharpness,
+                        image_type=image_type
                     )
                     
                     # Display result image
-                    st.image(result_image, caption="Recognition Result")
+                    image_placeholder.image(result_image, use_container_width=True)
                     
+                    # Display detected letters
                     if predictions:
-                        for i, pred in enumerate(predictions, 1):
-                            confidence = confidences[i-1]
-                            
-                            # Color the result based on confidence score
-                            if confidence >= 0.8:
-                                confidence_color = "🟢"
-                            elif confidence >= 0.5:
-                                confidence_color = "🟡"
-                            else:
-                                confidence_color = "🔴"
-                            
-                            st.metric(
-                                f"Prediction #{i} {confidence_color}",
-                                f"{app.letter_mapping[pred]['letter']} ({app.letter_mapping[pred]['symbol']})",
-                                f"Confidence: {confidence:.2%}"
-                            )
-                        
-                        # Display the full text of the top prediction
-                        best_prediction = predictions[0]
-                        st.markdown("### Recognized Text")
-                        st.markdown(f"""
-                        <div class="prediction-box">
-                            <div style='margin-bottom: 10px;'>Arabic Letter: {app.letter_mapping[best_prediction]['letter']}</div>
-                            <div>Thamudic Symbol: {app.letter_mapping[best_prediction]['symbol']}</div>
-                        </div>
-                        """, unsafe_allow_html=True)
+                        with letters_container:
+                            st.markdown("### Detected Letters")
+                            # Use columns to display letters in a grid
+                            letter_cols = st.columns(3)
+                            for idx, (pred, conf) in enumerate(zip(predictions, confidences)):
+                                letter_info = app.letter_mapping[pred]
+                                with letter_cols[idx % 3]:
+                                    st.markdown(
+                                        f"""
+                                        <div style="
+                                            padding: 10px;
+                                            border-radius: 5px;
+                                            background-color: rgba(30, 61, 89, 0.9);
+                                            color: white;
+                                            margin: 5px 0;
+                                            text-align: center;
+                                            border: 1px solid #ffc13b;">
+                                            <h4 style="margin:0;font-size:1.5em;">{letter_info['letter']}</h4>
+                                            <p style="margin:0;font-size:0.9em;">({letter_info['symbol']})</p>
+                                            <p style="margin:0;font-size:0.8em;color:#ffc13b;">
+                                                {conf:.1%}
+                                            </p>
+                                        </div>
+                                        """,
+                                        unsafe_allow_html=True
+                                    )
                     else:
-                        st.warning("No results found")
-                        
+                        with letters_container:
+                            st.warning("No letters detected in the image.")
+    
     except Exception as e:
         st.error(f"An error occurred: {str(e)}")
         logging.error(f"Error in application: {str(e)}")
