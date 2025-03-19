@@ -1,4 +1,4 @@
-# Thamudic Language Module | وحدة اللغة الثمودية
+# Thamudic Language Module | مودل اللغة الثمودية
 
 ## Overview | نظرة عامة
 The Thamudic Language Module is an advanced deep learning application designed for the accurate recognition and analysis of ancient Thamudic inscriptions. It leverages cutting-edge computer vision and neural network methodologies to deliver high-performance character recognition with a user-friendly web interface.
