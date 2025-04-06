@@ -1,5 +1,7 @@
 # Thamudic Language Module | مودل اللغة الثمودية
 
+![Thamudic Language Module](Screenshot%202025-04-07%20003659.png)
+
 ## Overview | نظرة عامة
 The Thamudic Language Module is an advanced deep learning application designed for the accurate recognition and analysis of ancient Thamudic inscriptions. It leverages cutting-edge computer vision and neural network methodologies to deliver high-performance character recognition with a user-friendly web interface.
 
@@ -138,7 +140,6 @@ thamudic-language-module/
 ├── run_app.bat                # Windows batch file to run the app | ملف دفعي لتشغيل التطبيق على ويندوز
 ├── PROJECT_SUMMARY.md         # Technical project summary | ملخص تقني للمشروع
 └── README.md                  # Project documentation | توثيق المشروع
-```
 
 ## Contributing | المساهمة
 Contributions are welcome! Please feel free to submit a Pull Request.
