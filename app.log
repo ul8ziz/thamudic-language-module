@@ -1232,3 +1232,17 @@ Check the documentation of torch.load to learn more about types accepted by defa
 2025-03-16 03:30:33,694 - INFO - Model loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
 2025-03-16 03:30:35,475 - INFO - Checkpoint loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
 2025-03-16 03:30:35,481 - INFO - Model loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-03-22 10:20:05,252 - INFO - Checkpoint loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-03-22 10:20:05,257 - INFO - Model loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-03-22 10:22:06,814 - INFO - Checkpoint loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-03-22 10:22:06,818 - INFO - Model loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-03-22 10:22:22,590 - INFO - Checkpoint loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-03-22 10:22:22,593 - INFO - Model loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-03-22 10:22:27,998 - INFO - Checkpoint loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-03-22 10:22:28,003 - INFO - Model loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-03-22 10:22:32,812 - INFO - Checkpoint loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-03-22 10:22:32,818 - INFO - Model loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-03-22 10:25:19,574 - INFO - Checkpoint loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-03-22 10:25:19,577 - INFO - Model loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-03-22 10:29:44,724 - INFO - Checkpoint loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
+2025-03-22 10:29:44,728 - INFO - Model loaded successfully from D:\ul8ziz\GitHub\thamudic-language-module\models\checkpoints\best_model.pth
